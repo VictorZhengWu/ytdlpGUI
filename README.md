@@ -1,8 +1,32 @@
 # yt-dlp GUI Video Downloader
 
+[中文版](README-cn.md)
+
 ## Overview
 
 This project is a Windows GUI wrapper for the [yt-dlp](https://github.com/yt-dlp/yt-dlp) command-line video downloader. Users simply paste a video URL into the interface and click "Download" — no command-line knowledge required. Supports Chinese/English UI switching, and allows customizing the download directory and log directory via a settings dialog.
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Design Philosophy](#design-philosophy)
+  - [Layered Architecture](#layered-architecture)
+  - [Key Technical Decisions](#key-technical-decisions)
+- [File Structure](#file-structure)
+- [Module Details](#module-details)
+  - [main.py — Entry Point](#mainpy--entry-point)
+  - [gui.py — GUI Module](#guipy--gui-module)
+  - [downloader.py — Download Core Module](#downloaderpy--download-core-module)
+  - [logger.py — Logging Module](#loggerpy--logging-module)
+  - [config.json — Config File](#configjson--config-file)
+- [Usage](#usage)
+  - [Requirements](#requirements)
+  - [Running the Program](#running-the-program)
+  - [Steps](#steps)
+  - [Language Switching](#language-switching)
+  - [Settings](#settings)
+- [Using downloader.py as a Standalone Module](#using-downloaderpy-as-a-standalone-module)
+- [Notes](#notes)
 
 ## Design Philosophy
 
@@ -56,9 +80,12 @@ ytdlpGUI/
 ├── downloader.py    # Download core module (standalone, no GUI dependencies)
 ├── logger.py        # Logging module (standalone, no GUI dependencies)
 ├── config.json      # User config file (download dir, log dir, UI language)
-├── flow.md          # Mermaid program design flowcharts
-├── README.md        # This file
-├── tasks.md         # Task checklist
+├── README.md        # English documentation
+├── README-cn.md     # Chinese documentation
+├── flow-en.md       # Mermaid program design flowcharts (English)
+├── flow-cn.md       # Mermaid program design flowcharts (Chinese)
+├── tasks-en.md      # Task checklist (English)
+├── tasks-cn.md      # Task checklist (Chinese)
 ├── core/            # yt-dlp and companion tools
 │   ├── yt-dlp.exe
 │   ├── ffmpeg.exe

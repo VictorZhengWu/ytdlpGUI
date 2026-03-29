@@ -439,11 +439,14 @@ class App:
         参数：
             name (str): 文件基本名称，"flow" 或 "readme"
         """
-        # 根据当前语言确定文件后缀（中文用 -cn，英文用 -en）
-        suffix = "-cn" if self.current_lang == "zh" else "-en"  # 选择语言后缀
-
-        # 拼接完整的文件名（小写），例如 "flow-cn.md" 或 "readme-en.md"
-        filename = f"{name.lower()}{suffix}.md"  # 构造文件名
+        # 根据文件类型和当前语言确定文件名
+        # README 特殊处理：英文版为 README.md（GitHub 默认首页），中文版为 README-cn.md
+        # flow/tasks 文件保持原名格式：xxx-cn.md / xxx-en.md
+        if name == "readme":  # README 文件使用特殊命名规则
+            filename = "README-cn.md" if self.current_lang == "zh" else "README.md"  # 根据语言选择 README 文件
+        else:  # 其它文档文件（如 flow）使用标准后缀命名
+            suffix = "-cn" if self.current_lang == "zh" else "-en"  # 选择语言后缀
+            filename = f"{name.lower()}{suffix}.md"  # 构造文件名
 
         # 拼接文件的完整绝对路径
         file_path = os.path.join(self.base_dir, filename)  # 获取绝对路径

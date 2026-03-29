@@ -1,8 +1,32 @@
 # yt-dlp GUI 视频下载器
 
+[English](README.md)
+
 ## 项目简介
 
 本项目为 [yt-dlp](https://github.com/yt-dlp/yt-dlp) 命令行视频下载工具的 Windows GUI 封装程序。用户只需在界面中粘贴视频链接，点击"下载"按钮即可完成视频下载，无需记忆命令行参数。支持中英文界面切换，支持通过设置对话框自定义下载目录和日志目录。
+
+## 目录
+
+- [项目简介](#项目简介)
+- [程序设计思路](#程序设计思路)
+  - [分层架构](#分层架构)
+  - [关键技术决策](#关键技术决策)
+- [文件结构](#文件结构)
+- [模块说明](#模块说明)
+  - [main.py — 程序入口](#mainpy--程序入口)
+  - [gui.py — GUI 界面模块](#guipy--gui-界面模块)
+  - [downloader.py — 下载核心模块](#downloaderpy--下载核心模块)
+  - [logger.py — 日志记录模块](#loggerpy--日志记录模块)
+  - [config.json — 配置文件](#configjson--配置文件)
+- [使用方法](#使用方法)
+  - [环境要求](#环境要求)
+  - [运行程序](#运行程序)
+  - [操作步骤](#操作步骤)
+  - [语言切换](#语言切换)
+  - [设置功能](#设置功能)
+- [downloader.py 作为独立模块使用](#downloaderpy-作为独立模块使用)
+- [注意事项](#注意事项)
 
 ## 程序设计思路
 
@@ -56,9 +80,12 @@ ytdlpGUI/
 ├── downloader.py    # 下载核心模块（独立，无 GUI 依赖）
 ├── logger.py        # 日志记录模块（独立，无 GUI 依赖）
 ├── config.json      # 用户配置文件（下载目录、日志目录、界面语言）
-├── flow.md          # Mermaid 程序设计流程图
-├── README.md        # 本文件
-├── tasks.md         # 任务清单
+├── README.md        # 英文说明文档
+├── README-cn.md     # 中文说明文档
+├── flow-en.md       # Mermaid 程序设计流程图（英文）
+├── flow-cn.md       # Mermaid 程序设计流程图（中文）
+├── tasks-en.md      # 任务清单（英文）
+├── tasks-cn.md      # 任务清单（中文）
 ├── core/            # yt-dlp 及配套工具
 │   ├── yt-dlp.exe
 │   ├── ffmpeg.exe
