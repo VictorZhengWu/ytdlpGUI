@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ytdlpGUI · 视频下载器</title>
+<link rel="stylesheet" href="css/style.css?v=44">
+</head>
+<body class="simple">
+<div class="bg-glow bg-glow-1"></div>
+<div class="bg-glow bg-glow-2"></div>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-logo">▶</span>
+    <h1>ytdlp<span class="accent">GUI</span></h1>
+  </div>
+  <div class="topbar-right">
+    <select id="langSelect" class="glass-select" aria-label="语言">
+      <option value="zh">中文</option><option value="en">English</option>
+      <option value="ja">日本語</option><option value="ko">한국어</option>
+    </select>
+    <button id="btnAdvance" class="btn ghost">
+      <span id="advanceLabelOn" data-i18n="advance">⚙ 高级</span>
+      <span id="advanceLabelOff" data-i18n="backSimple" class="hidden">✕ 精简</span>
+    </button>
+  </div>
+</header>
+
+<main>
+  <!-- 左列：URL + 信息 + 任务（精简/高级模式共用） -->
+  <section class="col-left">
+    <div class="card glass">
+      <label class="field-label" for="urlInput" data-i18n="urlLabel">视频链接（每行一个）</label>
+      <textarea id="urlInput" rows="3" placeholder="https://www.youtube.com/watch?v=...&#10;https://www.bilibili.com/video/BV..."></textarea>
+      <div class="btnrow">
+        <button id="btnInfo" class="btn ghost" data-i18n="fetchInfo">查询信息</button>
+        <button id="btnDownload" class="btn primary glow" data-i18n="download">⚡ 下 载</button>
+      </div>
+    </div>
+    <div class="card glass grow">
+      <div class="panel-head">
+        <div class="panel-tabs">
+          <button id="tabQueue" class="panel-tab active" data-i18n="queue">下载队列</button>
+          <button id="tabHistory" class="panel-tab" data-i18n="history">下载历史</button>
+        </div>
+        <button id="btnClearHistory" class="btn ghost sm danger hidden" data-i18n="clearHistory">清空历史</button>
+      </div>
+      <div id="jobList" class="job-list"><div class="empty-hint" data-i18n="emptyQueue">暂无任务，输入链接开始下载</div></div>
+      <div id="historyList" class="history-list hidden"><div class="empty-hint" data-i18n="emptyHistory">暂无下载历史</div></div>
+    </div>
+  </section>
+
+  <!-- 右列：仅高级模式显示 -->
+  <section class="col-right">
+    <div class="card glass grow options-card">
+      <div class="mode-switch" role="tablist">
+        <button id="modeQuick" class="mode-btn active" data-i18n="quickMode">常用设置</button>
+        <button id="modeAdvanced" class="mode-btn" data-i18n="advancedMode">全部选项</button>
+      </div>
+
+      <!-- 常用模式 -->
+      <div id="quickPanel" class="quick-panel"></div>
+
+      <!-- 高级模式 -->
+      <div id="advancedPanel" class="hidden">
+        <div class="options-toolbar">
+          <input id="optSearch" type="search" data-i18n-ph="searchOptions" placeholder="搜索选项（名称或说明）…">
+          <select id="presetSelect" class="glass-select"><option value="" data-i18n="presetNone">— 选择预设 —</option></select>
+          <button id="btnPresetSave" class="btn ghost sm" data-i18n="presetSave">存为预设</button>
+          <button id="btnPresetDelete" class="btn ghost sm danger" data-i18n="presetDelete">删除</button>
+          <button id="btnClearOpts" class="btn ghost sm" data-i18n="clearOpts">清空</button>
+        </div>
+        <div id="optTabs" class="opt-tabs"></div>
+        <div id="optPanels" class="opt-panels"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="cmdbar glass">
+  <span class="cmd-label" data-i18n="cmdPreview">命令预览</span>
+  <code id="cmdPreview">yt-dlp</code>
+</footer>
+
+<!-- 查询结果浮动窗口 -->
+<dialog id="infoDlg" class="glass info-dlg">
+  <div class="info-dlg-head">
+    <h3 data-i18n="infoTitle">查询结果</h3>
+    <div class="info-nav">
+      <span class="pos"></span>
+      <button class="nav-up" title="">↑</button>
+      <button class="nav-down" title="">↓</button>
+      <button class="nav-close" data-i18n="close">✕ 关闭</button>
+    </div>
+  </div>
+  <div id="infoBody" class="info-body"></div>
+</dialog>
+
+<!-- 目录选择对话框 -->
+<dialog id="dirDlg" class="glass">
+  <h3 data-i18n="chooseDir">选择下载目录</h3>
+  <div class="dir-roots" id="dirRoots"></div>
+  <div class="dir-current" id="dirCurrent"></div>
+  <div class="dir-list" id="dirList"></div>
+  <menu>
+    <button id="dirUp" class="btn ghost sm" data-i18n="parentDir">↑ 上级</button>
+    <span class="spacer"></span>
+    <button value="cancel" class="btn ghost" data-i18n="cancel">取消</button>
+    <button id="dirChoose" class="btn primary" data-i18n="choose">选择此目录</button>
+  </menu>
+</dialog>
+
+<script>window.APP_VER = "37";</script>
+<script src="js/i18n.js?v=44"></script>
+<script src="js/quick.js?v=44"></script>
+<script src="js/app.js?v=49"></script>
+</body>
+</html>

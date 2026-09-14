@@ -1,0 +1,25 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# 运行时产物（不入库）
+downloads/
+logs/
+backend/app/data/config.json
+backend/app/data/presets.json
+backend/app/data/history.json
+
+# 打包
+build/
+dist/
+*.spec.bak
+
+# 系统/编辑器
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+cookies.txt: # Netscape HTTP Cookie File
