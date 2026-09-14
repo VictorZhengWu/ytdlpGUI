@@ -26,7 +26,7 @@ def _read(path: Path, default):
 # ---- 应用配置 ----
 
 CONFIG_PATH = DATA_DIR / "config.json"
-DEFAULT_CONFIG = {"download_dir": "downloads", "language": "zh", "history_path": ""}
+DEFAULT_CONFIG = {"download_dir": "downloads", "language": "en", "history_path": ""}
 
 def get_config() -> dict:
     cfg = DEFAULT_CONFIG.copy()

@@ -1,6 +1,6 @@
 # ytdlpGUI
 
-**[中文](README.md) · [English](README.en.md) · [日本語](README.ja.md) · [한국어](README.ko.md)**
+**English ([README.md](README.md)) · [中文](README.zh.md) · [日本語](README.ja.md) · [한국어](README.ko.md)**
 
 yt-dlp의 크로스 플랫폼 GUI 프론트엔드(Web / Linux / Windows)입니다. yt-dlp의 **모든 명령줄 옵션**을 지원하며, UI와 로직을 엄격히 분리한 설계로 향후 macOS / iOS / Android 클라이언트에서도 동일한 백엔드 API를 재사용할 수 있습니다.
 

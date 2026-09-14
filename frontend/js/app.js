@@ -41,7 +41,7 @@ function buildConflicts() {
 async function boot() {
   await loadI18n();
   const cfg = await api("/api/config");
-  state.lang = AVAILABLE_LANGS.includes(cfg.language) ? cfg.language : "zh";
+  state.lang = AVAILABLE_LANGS.includes(cfg.language) ? cfg.language : "en";
   $("#langSelect").value = state.lang;
   LANG = state.lang; applyI18n();
 
