@@ -25,12 +25,6 @@ FINISH_RE = re.compile(r"(has already been downloaded|Merging formats|Deleting o
 EXTRACT_URL_RE = re.compile(r"Extracting URL:\s*(\S+)")
 
 
-def ffmpeg_available() -> bool:
-    """探测 PATH 中是否有 ffmpeg（视频/音频合并、格式转换、嵌入字幕的前提）。"""
-    from shutil import which
-    return which("ffmpeg") is not None
-
-
 @dataclass
 class Job:
     id: str
@@ -147,13 +141,15 @@ class DownloadManager:
 
     def _run(self, job: Job):
         from . import history  # 延迟导入避免环
+        from .ffmpeg import env_with_ffmpeg
         cmd = self.yt_dlp_cmd + ["-o", os.path.join(self.out_dir, "%(title)s [%(id)s].%(ext)s")] + job.argv + job.urls
         job.command_str = "yt-dlp " + " ".join(cmd[len(self.yt_dlp_cmd):])
         job.status = "running"
         job.push("status", job.status)
         try:
             proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                    text=True, bufsize=1, errors="replace")
+                                    text=True, bufsize=1, errors="replace",
+                                    env=env_with_ffmpeg())
         except OSError as e:
             job.status, job.error, job.ended_at = "error", str(e), time.time()
             job.push("status", job.status)

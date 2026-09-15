@@ -85,5 +85,9 @@
   "optOn": "开",
   "optOff": "关",
   "appTitle": "ytdlpGUI · 视频下载器",
-  "ffmpegWarn": "未检测到 ffmpeg：高画质视频将保存为「视频+音频」两个分离文件，格式转换与字幕嵌入不可用。安装 ffmpeg 并加入 PATH 后重启本程序即可恢复完整功能。"
+  "ffmpegWarn": "未检测到 ffmpeg：高画质视频将保存为「视频+音频」两个分离文件，格式转换与字幕嵌入不可用。可点击「自动安装」，或自行安装 ffmpeg；安装后刷新本页面即可。",
+  "ffmpegInstall": "⚙ 自动安装",
+  "ffmpegInstalling": "下载中 {p}%",
+  "ffmpegExtracting": "解压中…",
+  "ffmpegFail": "ffmpeg 自动安装失败"
 }

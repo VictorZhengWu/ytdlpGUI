@@ -44,8 +44,13 @@ async function boot() {
   state.lang = AVAILABLE_LANGS.includes(cfg.language) ? cfg.language : "en";
   $("#langSelect").value = state.lang;
   LANG = state.lang; applyI18n();
-  if (cfg.ffmpeg === false) $("#ffmpegWarn").classList.remove("hidden");
+  const ff = cfg.ffmpeg || {};
+  if (ff.available === false) {
+    $("#ffmpegWarn").classList.remove("hidden");
+    if (ff.os === "win32") $("#ffmpegInstallBtn").classList.remove("hidden");  // 自动安装仅 Windows
+  }
   $("#ffmpegWarnClose").onclick = () => $("#ffmpegWarn").classList.add("hidden");
+  $("#ffmpegInstallBtn").onclick = installFfmpeg;
 
   const reg = await api("/api/options");
   state.registry = reg;
@@ -65,6 +70,34 @@ async function boot() {
   $("#infoDlg .nav-down").title = t("nextResult");
   refreshJobs();
   setInterval(refreshJobs, 5000);
+}
+
+// ffmpeg 后台自动安装：启动后轮询状态，成功后横幅消失（检测每次请求实时跑，无需重启）
+async function installFfmpeg() {
+  const btn = $("#ffmpegInstallBtn");
+  btn.disabled = true;
+  try {
+    const r = await api("/api/ffmpeg/install", { body: {} });
+    if (r.already) { $("#ffmpegWarn").classList.add("hidden"); return; }
+    if (!r.started) throw new Error(r.error || "not started");
+    const poll = setInterval(async () => {
+      try {
+        const s = await api("/api/ffmpeg/status", { method: "GET" });
+        if (s.error) {
+          clearInterval(poll); btn.disabled = false; btn.textContent = t("ffmpegInstall");
+          alert(t("ffmpegFail") + "\n" + s.error);
+        } else if (s.available && !s.installing) {
+          clearInterval(poll); $("#ffmpegWarn").classList.add("hidden");
+        } else {
+          btn.textContent = s.phase === "extract" ? t("ffmpegExtracting")
+            : t("ffmpegInstalling").replace("{p}", Math.round((s.progress || 0) * 100));
+        }
+      } catch { /* 轮询瞬断忽略，下轮重试 */ }
+    }, 1200);
+  } catch (e) {
+    btn.disabled = false;
+    alert(t("ffmpegFail") + ": " + e.message);
+  }
 }
 
 async function api(path, opts) {

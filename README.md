@@ -81,7 +81,7 @@ The suite also runs automatically on GitHub Actions for every push / PR to `v2` 
 
 ## Known trade-offs
 
-- **ffmpeg is optional but recommended**: without it, high-quality videos (separate video+audio streams) cannot be merged, format conversion and subtitle embedding are unavailable. The UI shows a warning banner when ffmpeg is missing from PATH
+- **ffmpeg is optional but recommended**: without it, high-quality videos (separate video+audio streams) cannot be merged, format conversion and subtitle embedding are unavailable. The UI shows a warning banner when ffmpeg is missing; on Windows the banner offers one-click **Auto-install** (downloads an official static build into the app's `data/bin/`, no admin rights needed). Detection reads the registry PATH live, so installing ffmpeg (winget/choco/scoop or manually) takes effect after a page refresh — no service restart
 - URL input accepts http(s), `ytsearch` prefixes, and colon-less bare domains; other schemes/search prefixes are rejected (attack-surface consideration)
 - `--alias` / `--replace-in-metadata` / `--print-to-file` are multi-argument options expressed as space-separated values in one input box (per-segment space limits shown in the UI)
 - Pure CLI query options (`--help` / `--dump-json`, …) are hidden from the UI but still whitelisted for old presets

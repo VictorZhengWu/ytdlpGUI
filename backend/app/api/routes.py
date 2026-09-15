@@ -9,8 +9,8 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from ..services import history, metadata, options as optsvc, store
-from ..services.downloader import DownloadManager, ffmpeg_available
+from ..services import ffmpeg as ffsvc, history, metadata, options as optsvc, store
+from ..services.downloader import DownloadManager
 
 router = APIRouter(prefix="/api")
 
@@ -44,7 +44,7 @@ def get_options():
 
 @router.get("/config")
 def get_cfg():
-    return dict(store.get_config(), ffmpeg=ffmpeg_available())
+    return dict(store.get_config(), ffmpeg=ffsvc.detect())
 
 
 class ConfigIn(BaseModel):
@@ -61,6 +61,18 @@ def put_cfg(body: ConfigIn):
     if body.download_dir is not None and body.download_dir != before.get("download_dir"):
         rebuild_manager()
     return cfg
+
+
+# ---- ffmpeg 探测与自动安装 ----
+
+@router.get("/ffmpeg/status")
+def ffmpeg_status():
+    return ffsvc.status()
+
+
+@router.post("/ffmpeg/install")
+def ffmpeg_install():
+    return ffsvc.start_install()
 
 
 # ---- 元数据查询 ----

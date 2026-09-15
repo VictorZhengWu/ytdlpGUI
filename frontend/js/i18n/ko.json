@@ -85,5 +85,9 @@
   "optOn": "켜기",
   "optOff": "끄기",
   "appTitle": "ytdlpGUI · 영상 다운로더",
-  "ffmpegWarn": "ffmpeg가 감지되지 않았습니다: 고화질 영상은 영상과 오디오가 분리된 두 파일로 저장되며 형식 변환과 자막 삽입을 사용할 수 없습니다. ffmpeg를 설치해 PATH에 추가한 뒤 이 앱을 재시작하세요."
+  "ffmpegWarn": "ffmpeg가 감지되지 않았습니다: 고화질 영상은 영상과 오디오가 분리된 두 파일로 저장되며 형식 변환과 자막 삽입을 사용할 수 없습니다. '자동 설치'를 누르거나 직접 설치한 뒤 이 페이지를 새로고침하세요.",
+  "ffmpegInstall": "⚙ 자동 설치",
+  "ffmpegInstalling": "다운로드 중 {p}%",
+  "ffmpegExtracting": "압축 해제 중…",
+  "ffmpegFail": "ffmpeg 자동 설치 실패"
 }

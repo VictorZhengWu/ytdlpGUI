@@ -85,5 +85,9 @@
   "optOn": "On",
   "optOff": "Off",
   "appTitle": "ytdlpGUI · Video Downloader",
-  "ffmpegWarn": "ffmpeg not detected: high-quality videos will be saved as separate video/audio files; format conversion and subtitle embedding are unavailable. Install ffmpeg, add it to PATH, then restart this app."
+  "ffmpegWarn": "ffmpeg not detected: high-quality videos will be saved as separate video/audio files; format conversion and subtitle embedding are unavailable. Use \"Auto-install\", or install ffmpeg yourself, then refresh this page.",
+  "ffmpegInstall": "⚙ Auto-install",
+  "ffmpegInstalling": "Downloading {p}%",
+  "ffmpegExtracting": "Extracting…",
+  "ffmpegFail": "ffmpeg auto-install failed"
 }
