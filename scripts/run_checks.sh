@@ -6,6 +6,7 @@
 set -e
 cd "$(dirname "$0")/.."
 PY=.venv/bin/python
+[ -x "$PY" ] || PY=.venv/Scripts/python.exe
 [ -x "$PY" ] || PY=python3
 
 echo "=== 1/3 注册表漂移检测 ==="
