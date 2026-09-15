@@ -8,7 +8,10 @@ a = Analysis(
     binaries=[],
     datas=[
         ("frontend", "frontend"),
-        ("backend/app/data", "backend/app/data"),
+        # 只打包静态注册表文件：整个目录会带入源码模式下的运行时数据
+        # （config.json 含用户路径、history/presets），随 exe 分发即泄露
+        ("backend/app/data/options_registry.json", "backend/app/data"),
+        ("backend/app/data/options_zh.json", "backend/app/data"),
     ],
     hiddenimports=[
         "backend.app.main",

@@ -30,11 +30,17 @@ def open_browser():
 
 def main():
     prepare_env()
+    # 无控制台/重定向下 stdout 编码随系统代码页（如 cp1252），非 ASCII 消息会炸启动——统一容错
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass
     if os.environ.get("YTDLPGUI_NO_BROWSER") != "1":
         open_browser()
     import uvicorn
     from backend.app.main import app
-    print(f"ytdlpGUI 已启动: http://{HOST}:{PORT}  （关闭本程序即退出）")
+    print(f"ytdlpgui running at http://{HOST}:{PORT}  (close this program to exit)")
     uvicorn.run(app, host=HOST, port=PORT, log_level="warning")
 
 

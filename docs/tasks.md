@@ -144,3 +144,5 @@
 |---|---|---|
 | T66 | ffmpeg 检测增强：shutil.which 之外新增 Windows 注册表 PATH（HKCU/HKLM 实时读）、winget/chocolatey/scoop 常见位置、应用 data/bin 自带目录；/api/config 下发结构化 {available,path,source,os}；yt-dlp 子进程 spawn 时注入检测到的 ffmpeg 目录到 PATH——装完 ffmpeg 刷新页面横幅即消失，无需重启服务。本机实证：winget 安装后 source=registry 命中 | ✅ |
 | T67 | Windows 自动安装：POST /api/ffmpeg/install 后台线程下载 gyan.dev 静态构建并解压 ffmpeg/ffprobe 至 data/bin；GET /api/ffmpeg/status 查询进度（download/extract 两阶段+百分比）；前端横幅内「自动安装」按钮（仅 Windows 且未安装时显示），安装成功横幅自动消失。解压逻辑经合成 zip 单测，下载源 HEAD 200（106MB）；【待下一棒】在无 ffmpeg 的干净 Windows 机器上完整跑一次真实自动安装 | ✅ |
+
+| T68 | Windows exe 构建：spec 的 datas 由整目录改为只打包 options_registry/options_zh 两个注册表文件——原配置会把源码模式下的运行时数据（config.json 含用户路径、history/presets）打进 exe 泄露。附带修复：launcher 中文启动消息在 cp1252 重定向下 UnicodeEncodeError 炸启动（stdout 重配 utf-8 + 消息改 ASCII）。dist/ytdlpgui.exe 16MB 冒烟通过：默认配置干净无泄露、frozen 注册表 ffmpeg 检测命中、241 选项/51 三态、前端 v53 | ✅ |
