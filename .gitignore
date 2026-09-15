@@ -11,9 +11,10 @@ backend/app/data/config.json
 backend/app/data/presets.json
 backend/app/data/history.json
 
-# 打包
+# 打包（build 中间物忽略；成品 exe 入库供直接下载）
 build/
-dist/
+dist/*
+!dist/ytdlpgui.exe
 *.spec.bak
 
 # 系统/编辑器
@@ -22,4 +23,6 @@ Thumbs.db
 *.swp
 .idea/
 .vscode/
-cookies.txt: # Netscape HTTP Cookie File
+
+# 运行时生成的 cookie 罐（凭据风险，绝不入库）
+cookies.txt
