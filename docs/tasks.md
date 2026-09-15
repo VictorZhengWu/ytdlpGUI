@@ -128,4 +128,4 @@
 | # | 任务 | 状态 |
 |---|---|---|
 | T61 | run_checks.sh Windows venv 路径兼容（.venv/Scripts/python.exe），新机器开箱可用 | ✅ |
-| T62 | GitHub Actions CI：push/PR 到 v2 触发质量套件三步（漂移检测/结构断言/96 条 example 回归），Ubuntu + Python 3.12 | 🚧 |
+| T62 | GitHub Actions CI：push/PR 到 v2 触发质量套件三步（漂移检测/结构断言/96 条 example 回归），Ubuntu + Python 3.12；首跑 6a5cdee 全绿（1m26s） | ✅ |
