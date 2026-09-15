@@ -30,6 +30,12 @@ def open_browser():
 
 def main():
     prepare_env()
+    # 窗口模式（exe console=False / pythonw）下 sys.stdout/stderr 为 None，
+    # uvicorn 日志 formatter 调 stdout.isatty() 会直接崩溃——补一个可写的空流
+    if sys.stdout is None:
+        sys.stdout = open(os.devnull, "w", encoding="utf-8")
+    if sys.stderr is None:
+        sys.stderr = open(os.devnull, "w", encoding="utf-8")
     # 无控制台/重定向下 stdout 编码随系统代码页（如 cp1252），非 ASCII 消息会炸启动——统一容错
     for stream in (sys.stdout, sys.stderr):
         try:
