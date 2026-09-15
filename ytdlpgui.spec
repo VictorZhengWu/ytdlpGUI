@@ -20,6 +20,10 @@ a = Analysis(
         "uvicorn.protocols.http.auto",
         "uvicorn.protocols.websockets.auto",
         "uvicorn.lifespan.on",
+        # pywebview 原生窗口（Windows Edge WebView2 / WinForms 宿主）
+        "webview",
+        "webview.platforms.winforms",
+        "webview.platforms.edgechromium",
     ],
     hookspath=[],
     excludes=["tkinter"],

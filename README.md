@@ -7,6 +7,7 @@ A cross-platform graphical front-end for yt-dlp (Web / Linux / Windows) covering
 ## Features
 
 - **Dual-mode UI**: Simple mode by default (title bar + URL input + download queue, plain `yt-dlp <url>`); "⚙ Advanced" expands the full settings
+- **Native window on Windows**: the packaged exe runs as a real desktop app (WebView2), not a browser tab
 - **All options**: every yt-dlp option (plus manually supplemented hidden ones) grouped by official categories, with localized descriptions, usage examples and tooltips; searchable
 - **Mutual-exclusion governance**: 51 tri-state groups (Default/On/Off) + 30 auto-clearing pairs, metadata shared by frontend and backend, enforced server-side
 - **Download management**: multi-URL job queue, live progress/speed/ETA/log (SSE), cancellation, real-time file-path reporting
@@ -55,7 +56,7 @@ API docs (OpenAPI): http://127.0.0.1:8765/docs
 build_windows.bat
 ```
 
-Produces a single-file `dist\ytdlpgui.exe` — no console window, double-click to run, opens the browser UI automatically. Config/presets/history are stored in a `data\` folder next to the exe; copy the exe to distribute.
+Produces a single-file `dist\ytdlpgui.exe` — double-click to run: it opens as a **native desktop window** (its own taskbar entry and title bar, via Edge WebView2; falls back to your browser if WebView2 is unavailable). Closing the window exits the app. Config/presets/history are stored in a `data\` folder next to the exe; copy the exe to distribute.
 
 **Option B (manual)**:
 

@@ -146,3 +146,5 @@
 | T67 | Windows 自动安装：POST /api/ffmpeg/install 后台线程下载 gyan.dev 静态构建并解压 ffmpeg/ffprobe 至 data/bin；GET /api/ffmpeg/status 查询进度（download/extract 两阶段+百分比）；前端横幅内「自动安装」按钮（仅 Windows 且未安装时显示），安装成功横幅自动消失。解压逻辑经合成 zip 单测，下载源 HEAD 200（106MB）；【待下一棒】在无 ffmpeg 的干净 Windows 机器上完整跑一次真实自动安装 | ✅ |
 
 | T68 | Windows exe 构建：spec 的 datas 由整目录改为只打包 options_registry/options_zh 两个注册表文件——原配置会把源码模式下的运行时数据（config.json 含用户路径、history/presets）打进 exe 泄露。附带修复：launcher 中文启动消息在 cp1252 重定向下 UnicodeEncodeError 炸启动（stdout 重配 utf-8 + 消息改 ASCII）。dist/ytdlpgui.exe 16MB 冒烟通过：默认配置干净无泄露、frozen 注册表 ffmpeg 检测命中、241 选项/51 三态、前端 v53。二次修复：窗口模式（无控制台）下 sys.stdout=None，uvicorn 日志 formatter 调 isatty() 炸启动（首次交付实测复现）；launcher 补空流兜底，重建后经 start 分离启动（无控制台等价双击）冒烟通过 | ✅ |
+
+| T69 | 原生窗口模式：launcher 集成 pywebview（Windows Edge WebView2），双击 exe 得到独立桌面窗口（1280×820、最小 960×600、主屏居中、关窗即退出后端）；端口被占自动顺延（多开/与开发服务共存）；pywebview 不可用回退浏览器模式；run.sh/run.bat 保持浏览器模式不动（开发/LAN 入口），spec 增加 webview hiddenimports。验证：源码与 exe 双通道截图确认原生窗口（无浏览器地址栏）、端口顺延实测 | ✅ |
