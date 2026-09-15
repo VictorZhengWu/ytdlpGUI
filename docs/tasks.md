@@ -129,3 +129,11 @@
 |---|---|---|
 | T61 | run_checks.sh Windows venv 路径兼容（.venv/Scripts/python.exe），新机器开箱可用 | ✅ |
 | T62 | GitHub Actions CI：push/PR 到 v2 触发质量套件三步（漂移检测/结构断言/96 条 example 回归），Ubuntu + Python 3.12；首跑 6a5cdee 全绿（1m26s） | ✅ |
+
+## v3.4 用户实测三轮修复（第十三轮）
+
+| # | 任务 | 状态 |
+|---|---|---|
+| T63 | 标签页标题随界面语言切换（i18n appTitle，applyI18n 设 document.title；index.html 静态标题改英文默认）；附带修复：切换语言时已有任务卡徽章/按钮文案重翻译（refreshJobs 只加新卡不更新旧卡） | ✅ |
+| T64 | 多链接任务历史缺记录：Job.to_dict() 漏 files 字段（只记最后一个 filepath）；新增 file_urls 并行数组按「Extracting URL」行分段，多 URL 任务逐 URL 记一条历史；附带修复：MERGE_RE 匹配现版 yt-dlp「Merging formats into \"路径\"」，合并最终产物路径首次可被记录 | ✅ |
+| T65 | 无 ffmpeg 时高画质下载产生分离的视频/音频两文件：/api/config 下发 ffmpeg_available，前端四语警告横幅（可关闭）；README 已知取舍补充说明。本机复现实证（yt-dlp 2026.08.19 无 ffmpeg + 无 JS 运行时 → YouTube 无预合并格式可回退） | ✅ |

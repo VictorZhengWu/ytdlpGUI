@@ -45,23 +45,43 @@ def _save(path: Path, entries: list):
         json.dump(entries[-MAX_ENTRIES:], f, ensure_ascii=False, indent=1)
 
 
+def _entries_for(job: dict) -> list:
+    """把一个任务拆成历史条目：多 URL 任务按产物归属分段，每个 URL 一条；
+    单 URL / 无法分段（file_urls 缺失或全空）时整任务一条。"""
+    files = job.get("files") or ([job["filepath"]] if job.get("filepath") else [])
+    file_urls = (job.get("file_urls") or [])[:len(files)]
+    urls = job.get("urls", [])
+
+    base = {
+        "time": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(job.get("ended_at") or time.time())),
+        "status": job.get("status", ""),
+        "error": (job.get("error") or "")[:300],
+        "command": job.get("command", ""),
+    }
+
+    # 分段条件：多个输入 URL 且产物归属齐全（同一 URL 的连续产物并为一段）
+    if len(urls) > 1 and file_urls and all(file_urls):
+        segments: list = []
+        for f, u in zip(files, file_urls):
+            if segments and segments[-1][0] == u:
+                segments[-1][1].append(f)
+            else:
+                segments.append([u, [f]])
+        return [dict(base, urls=[u], titles=[Path(f).name for f in seg_files],
+                     filepath=seg_files[-1] if seg_files else "")
+                for u, seg_files in segments]
+
+    return [dict(base, urls=urls, titles=[Path(f).name for f in files],
+                 filepath=files[-1] if files else "")]
+
+
 def record(job: dict):
     """任务终态时调用：记录下载历史条目。失败只记日志，绝不抛出。"""
     try:
-        files = job.get("files") or ([job["filepath"]] if job.get("filepath") else [])
-        entry = {
-            "time": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(job.get("ended_at") or time.time())),
-            "urls": job.get("urls", []),
-            "titles": [Path(f).name for f in files],
-            "filepath": files[-1] if files else "",
-            "status": job.get("status", ""),
-            "error": (job.get("error") or "")[:300],
-            "command": job.get("command", ""),
-        }
+        entries = _entries_for(job)
         with _lock:
             p = _history_path()
-            entries = _load(p)
-            entries.append(entry)
+            entries = _load(p) + entries
             _save(p, entries)
     except Exception as e:  # 历史失败不影响下载
         print(f"[history] record failed: {e!r}", file=sys.stderr)

@@ -19,8 +19,16 @@ PROGRESS_RE = re.compile(
     r"(?:at\s+([\d.]+[KMG]?i?B/s))?\s*(?:ETA\s+([\d:]+))?"
 )
 DESTINATION_RE = re.compile(r"(?:Destination|Renaming|Already downloaded|Merging formats in)\s*:\s*(.+)")
+MERGE_RE = re.compile(r'Merging formats into\s+"([^"]+)"')  # 现版 yt-dlp：[Merger] Merging formats into "路径"
 ALREADY_RE = re.compile(r"\[download\]\s+(.+?)\s+has already been downloaded")
 FINISH_RE = re.compile(r"(has already been downloaded|Merging formats|Deleting original|Estimated download size)")
+EXTRACT_URL_RE = re.compile(r"Extracting URL:\s*(\S+)")
+
+
+def ffmpeg_available() -> bool:
+    """探测 PATH 中是否有 ffmpeg（视频/音频合并、格式转换、嵌入字幕的前提）。"""
+    from shutil import which
+    return which("ffmpeg") is not None
 
 
 @dataclass
@@ -35,6 +43,8 @@ class Job:
     eta: str = ""
     filepath: str = ""
     files: list = field(default_factory=list)   # 全部产物文件（多视频/合并前后的各路径）
+    file_urls: list = field(default_factory=list)  # 与 files 平行：每个产物归属的 URL（按 Extracting URL 行跟踪）
+    current_url: str = ""                        # 当前正在处理的 URL（解析行时维护，不序列化）
     error: str = ""
     ended_at: float = 0.0
     lines: deque = field(default_factory=lambda: deque(maxlen=500))
@@ -50,6 +60,7 @@ class Job:
             "id": self.id, "urls": self.urls, "argv": self.argv,
             "status": self.status, "progress": self.progress,
             "speed": self.speed, "eta": self.eta, "filepath": self.filepath,
+            "files": list(self.files), "file_urls": list(self.file_urls),
             "error": self.error, "created_at": self.created_at,
             "command": self.command_str or ("yt-dlp " + " ".join(self.argv + self.urls)),
         }.items()}
@@ -181,14 +192,20 @@ class DownloadManager:
             job.speed = m.group(2) or job.speed
             job.eta = m.group(3) or job.eta
             job.push("progress", {"progress": job.progress, "speed": job.speed, "eta": job.eta})
-        d = DESTINATION_RE.search(line)
+        e = EXTRACT_URL_RE.search(line)  # yt-dlp 每处理一个 URL 前输出（分段归属依据）
+        if e:
+            job.current_url = e.group(1)
+            return
+        d = DESTINATION_RE.search(line) or MERGE_RE.search(line)
         if d:
             job.filepath = d.group(1).strip()
             job.files.append(job.filepath)
+            job.file_urls.append(job.current_url)
             job.push("file", job.filepath)  # 产物路径实时下发（任务卡显示）
         else:
             a = ALREADY_RE.search(line)  # 已下载过：路径前置无冒号，单独匹配
             if a:
                 job.filepath = a.group(1).strip()
                 job.files.append(job.filepath)
+                job.file_urls.append(job.current_url)
                 job.push("file", job.filepath)

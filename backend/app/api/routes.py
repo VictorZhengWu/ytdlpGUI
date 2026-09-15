@@ -10,7 +10,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from ..services import history, metadata, options as optsvc, store
-from ..services.downloader import DownloadManager
+from ..services.downloader import DownloadManager, ffmpeg_available
 
 router = APIRouter(prefix="/api")
 
@@ -44,7 +44,7 @@ def get_options():
 
 @router.get("/config")
 def get_cfg():
-    return store.get_config()
+    return dict(store.get_config(), ffmpeg=ffmpeg_available())
 
 
 class ConfigIn(BaseModel):

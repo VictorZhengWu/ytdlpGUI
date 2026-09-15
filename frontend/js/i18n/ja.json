@@ -83,5 +83,7 @@
   "netShare": "ネットワーク共有",
   "optDefault": "デフォルト",
   "optOn": "オン",
-  "optOff": "オフ"
+  "optOff": "オフ",
+  "appTitle": "ytdlpGUI · 動画ダウンローダー",
+  "ffmpegWarn": "ffmpeg が検出されません：高画質動画は映像と音声が別々のファイルとして保存され、フォーマット変換や字幕の埋め込みは利用できません。ffmpeg をインストールして PATH に追加し、本アプリを再起動してください。"
 }

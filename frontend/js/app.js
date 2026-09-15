@@ -44,6 +44,8 @@ async function boot() {
   state.lang = AVAILABLE_LANGS.includes(cfg.language) ? cfg.language : "en";
   $("#langSelect").value = state.lang;
   LANG = state.lang; applyI18n();
+  if (cfg.ffmpeg === false) $("#ffmpegWarn").classList.remove("hidden");
+  $("#ffmpegWarnClose").onclick = () => $("#ffmpegWarn").classList.add("hidden");
 
   const reg = await api("/api/options");
   state.registry = reg;
@@ -745,8 +747,19 @@ function bindEvents() {
     api("/api/config", { method: "PUT", body: { language: LANG } });
     buildQuickPanel(await api("/api/config", { method: "GET" }));
     buildOptionTabs();
+    retranslateJobCards();
     refreshJobs();
   };
+}
+
+// 已有任务卡创建于旧语言会话，切换语言时同步徽章/按钮文案（refreshJobs 只加新卡不更新旧的）
+function retranslateJobCards() {
+  state.jobs.forEach(j => {
+    const st = [...j.badge.classList].find(c => c !== "badge") || "";
+    j.badge.textContent = t("statusMap")[st] || st;
+    j.el.querySelector(".log-btn").textContent = t("toggleLog");
+    j.el.querySelector(".cancel-btn").textContent = t("cancelJob");
+  });
 }
 
 // ---------- 工具 ----------

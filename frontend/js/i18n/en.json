@@ -83,5 +83,7 @@
   "netShare": "Network share",
   "optDefault": "Default",
   "optOn": "On",
-  "optOff": "Off"
+  "optOff": "Off",
+  "appTitle": "ytdlpGUI · Video Downloader",
+  "ffmpegWarn": "ffmpeg not detected: high-quality videos will be saved as separate video/audio files; format conversion and subtitle embedding are unavailable. Install ffmpeg, add it to PATH, then restart this app."
 }

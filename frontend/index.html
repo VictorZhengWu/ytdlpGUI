@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ytdlpGUI · 视频下载器</title>
-<link rel="stylesheet" href="css/style.css?v=44">
+<title>ytdlpGUI · Video Downloader</title>
+<link rel="stylesheet" href="css/style.css?v=45">
 </head>
 <body class="simple">
 <div class="bg-glow bg-glow-1"></div>
@@ -26,6 +26,11 @@
     </button>
   </div>
 </header>
+
+<div id="ffmpegWarn" class="ffmpeg-warn hidden">
+  <span class="ffmpeg-warn-text" data-i18n="ffmpegWarn"></span>
+  <button id="ffmpegWarnClose" class="ffmpeg-warn-close" aria-label="×">×</button>
+</div>
 
 <main>
   <!-- 左列：URL + 信息 + 任务（精简/高级模式共用） -->
@@ -111,9 +116,9 @@
   </menu>
 </dialog>
 
-<script>window.APP_VER = "37";</script>
-<script src="js/i18n.js?v=44"></script>
-<script src="js/quick.js?v=44"></script>
-<script src="js/app.js?v=50"></script>
+<script>window.APP_VER = "38";</script>
+<script src="js/i18n.js?v=45"></script>
+<script src="js/quick.js?v=45"></script>
+<script src="js/app.js?v=52"></script>
 </body>
 </html>
