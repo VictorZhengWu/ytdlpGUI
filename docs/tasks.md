@@ -122,3 +122,10 @@
 | T58 | D1 语言切换丢三态组 / D2 nargs=1 污染 / D3 配置 PUT 清任务列表 / D4 格式点击不回填 / D5 路径不上报 —— 全部修复并经 Agent 独立核验 | ✅ |
 | T59 | Agent 判读定稿（qa-ui-report.md）：UI 测试通过；4 判读项裁定非阻塞 | ✅ |
 | T60 | 补关 P3：already-downloaded 行路径解析（ALREADY_RE） | ✅ |
+
+## v3.3 CI（第十二轮）
+
+| # | 任务 | 状态 |
+|---|---|---|
+| T61 | run_checks.sh Windows venv 路径兼容（.venv/Scripts/python.exe），新机器开箱可用 | ✅ |
+| T62 | GitHub Actions CI：push/PR 到 v2 触发质量套件三步（漂移检测/结构断言/96 条 example 回归），Ubuntu + Python 3.12 | 🚧 |

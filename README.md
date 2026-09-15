@@ -77,6 +77,8 @@ Run `scripts/run_checks.sh` after code changes or yt-dlp upgrades (all three ste
 
 Three-minute pre-release smoke check: page boots → "All Options" shows ≥40 tri-state groups → English UI has no Chinese leftovers.
 
+The suite also runs automatically on GitHub Actions for every push / PR to `v2` (`.github/workflows/ci.yml`).
+
 ## Known trade-offs
 
 - URL input accepts http(s), `ytsearch` prefixes, and colon-less bare domains; other schemes/search prefixes are rejected (attack-surface consideration)
