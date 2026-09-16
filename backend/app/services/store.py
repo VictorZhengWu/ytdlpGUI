@@ -45,9 +45,12 @@ def _user_path(v: str) -> str:
 
 def _filename_template(v: str) -> str:
     """输出文件名模板：只允许文件名成分（yt-dlp %(field)s 语法），
-    禁分隔符/../盘符——防止模板把产物写到输出目录之外。"""
+    禁分隔符/../盘符——防止模板把产物写到输出目录之外。
+    空串视为恢复默认模板（清空输入框=重置，而非报错）。"""
     v = (v or "").strip()
-    if not v or "/" in v or "\\" in v or ".." in v or ":" in v:
+    if not v:
+        return DEFAULT_CONFIG["filename_template"]
+    if "/" in v or "\\" in v or ".." in v or ":" in v:
         raise ValueError("illegal filename template")
     return v
 

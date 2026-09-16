@@ -201,8 +201,15 @@ function makeQuickControl(item, cfg) {
     input.type = "text"; input.dataset.cfgkey = key;
     input.placeholder = (item.ph && quickText(item.ph)) || "";
     input.value = cfg?.[key] ?? "";
-    input.onchange = () => api("/api/config", { method: "PUT", body: { [key]: input.value.trim() } })
-      .catch(e => { showErr(e); input.value = cfg?.[key] ?? ""; });
+    input.onchange = async () => {
+      try {
+        const saved = await api("/api/config", { method: "PUT", body: { [key]: input.value.trim() } });
+        input.value = saved[key] ?? "";  // 以服务端保存值为准（空串重置默认也在此回显）
+      } catch (e) {  // 非法值：拉实时配置回显最后保存值（不用构建期闭包快照）
+        showErr(e);
+        try { input.value = (await api("/api/config"))[key] ?? ""; } catch {}
+      }
+    };
     div.append(lab, input);
     return div;
   }
