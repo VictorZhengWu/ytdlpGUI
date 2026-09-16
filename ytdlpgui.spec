@@ -43,5 +43,5 @@ exe = EXE(
     strip=False,
     upx=False,
     console=False,          # 双击不弹黑框；如需排错改为 True 重新打包
-    icon=None,
+    icon="assets/icon.ico",  # scripts/make_icon.py 生成
 )

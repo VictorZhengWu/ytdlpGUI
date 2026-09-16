@@ -9,7 +9,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel
 
-from ..services import ffmpeg as ffsvc, history, imageproxy, metadata, options as optsvc, runtime, store
+from ..services import ffmpeg as ffsvc, history, imageproxy, metadata, options as optsvc, runtime, store, update as updsvc
 from ..services.downloader import DownloadManager
 
 router = APIRouter(prefix="/api")
@@ -185,6 +185,13 @@ def proxy_image(url: str):
         raise HTTPException(502, "图片获取失败")
     return Response(content=data, media_type=ctype,
                     headers={"Cache-Control": "private, max-age=86400"})
+
+
+# ---- 更新检查（SSRF 约束见 services/update.py） ----
+
+@router.get("/update")
+def check_update():
+    return updsvc.check()
 
 
 # ---- 下载任务 ----

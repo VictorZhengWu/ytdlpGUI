@@ -52,6 +52,17 @@ async function boot() {
   }
   $("#ffmpegWarnClose").onclick = () => $("#ffmpegWarn").classList.add("hidden");
   $("#ffmpegInstallBtn").onclick = installFfmpeg;
+  $("#btnPaste").onclick = async () => {  // 剪贴板粘贴：URL 追加为新行，不覆盖已有内容
+    try {
+      const text = (await navigator.clipboard.readText() || "").trim();
+      if (!text) return;
+      if (!/^https?:\/\/|^[\w.-]+\.[a-z]{2,}/i.test(text)) return alert(t("pasteNotUrl"));
+      const cur = $("#urlInput").value.trim();
+      if (cur.split("\n").map(s => s.trim()).includes(text)) return;  // 已存在不重复
+      $("#urlInput").value = cur ? cur + "\n" + text : text;
+    } catch { alert(t("pasteFail")); }
+  };
+  checkForUpdate();  // 静默检查新版，有则显示横幅（失败不打扰）
 
   const reg = await api("/api/options");
   state.registry = reg;
@@ -74,6 +85,19 @@ async function boot() {
 }
 
 // ffmpeg 后台自动安装：启动后轮询状态，成功后横幅消失（检测每次请求实时跑，无需重启）
+// 更新检查：boot 静默调用，有新版显示可关闭横幅；跳转由前端 window.open（不经服务端）
+async function checkForUpdate() {
+  try {
+    const u = await api("/api/update", { method: "GET" });
+    if (!u.has_update) return;
+    const banner = $("#updateBanner");
+    banner.querySelector(".update-banner-text").textContent =
+      t("updateAvailable").replace("{v}", u.latest).replace("{c}", u.current);
+    banner.classList.remove("hidden");
+    $("#updateBannerClose").onclick = () => banner.classList.add("hidden");
+  } catch { /* 检查失败静默 */ }
+}
+
 async function installFfmpeg() {
   const btn = $("#ffmpegInstallBtn");
   btn.disabled = true;
@@ -638,15 +662,78 @@ function renderInfo(info, box) {
         <td><b>${esc(f.format_id)}</b></td><td>${esc(f.ext)}</td><td>${esc(f.resolution)}</td>
         <td>${f.fps || ""}</td><td>${esc(f.vcodec)}</td><td>${esc(f.acodec)}</td>
         <td>${fmtSize(f.filesize)}</td></tr>`).join("");
+
+  // 音轨选择状态：与已选视频格式组合成「视频+bestaudio[language=xx]/bestaudio/best」
+  const picked = { video: "", audioLang: "", subs: new Set() };
+  const composeFormat = () => {
+    let val = picked.video || "bv*";
+    if (picked.audioLang)
+      val += `+bestaudio[language=${picked.audioLang}]/bestaudio/best`;
+    setOption("-f", val === "bv*" ? undefined : val);
+    const fmtInput = state.inputs.get("--format");
+    if (fmtInput) fmtInput.value = val === "bv*" ? "" : val;
+  };
+
   table.querySelectorAll("tr[data-fid]").forEach(tr => tr.onclick = () => {
     table.querySelectorAll("tr").forEach(r => r.classList.remove("selected"));
     tr.classList.add("selected");
-    setOption("-f", tr.dataset.fid);
-    // 同步回显到高级面板的 --format 输入框（-f 是其短名）
-    const fmtInput = state.inputs.get("--format");
-    if (fmtInput) fmtInput.value = tr.dataset.fid;
+    picked.video = tr.dataset.fid;
+    composeFormat();
   });
-  box.append(head, meta, hint, table);
+
+  const extras = document.createElement("div");
+  extras.className = "info-extras";
+
+  // 多音轨（YouTube 多语配音等）：>1 种语言才展示
+  if ((info.audio_tracks || []).length > 1) {
+    const row = document.createElement("div");
+    row.className = "chip-row";
+    const lab = document.createElement("span");
+    lab.className = "chip-label";
+    lab.textContent = t("audioTrackLabel");
+    row.appendChild(lab);
+    info.audio_tracks.forEach(trk => {
+      const chip = document.createElement("button");
+      chip.className = "chip";
+      chip.textContent = trk.language;
+      chip.onclick = () => {
+        picked.audioLang = picked.audioLang === trk.language ? "" : trk.language;
+        row.querySelectorAll(".chip").forEach(c => c.classList.toggle("active", c === chip && picked.audioLang));
+        composeFormat();
+      };
+      row.appendChild(chip);
+    });
+    extras.appendChild(row);
+  }
+
+  // 字幕语言：点选切换 → --sub-langs（auto: 前缀仅展示标记，写入时剥离）
+  if ((info.subtitle_langs || []).length) {
+    const row = document.createElement("div");
+    row.className = "chip-row";
+    const lab = document.createElement("span");
+    lab.className = "chip-label";
+    lab.textContent = t("subsLabel");
+    row.appendChild(lab);
+    // 界面语言相关的排最前（zh*/en*），其余保持后端顺序（人工字幕优先于自动）
+    const pref = l => /^(auto:)?(zh|en)/i.test(l) ? 0 : 1;
+    [...info.subtitle_langs].sort((a, b) => pref(a) - pref(b)).forEach(lang => {
+      const chip = document.createElement("button");
+      chip.className = "chip" + (lang.startsWith("auto:") ? " chip-auto" : "");
+      chip.textContent = lang.replace("auto:", "") + (lang.startsWith("auto:") ? "⁺" : "");
+      chip.title = lang.startsWith("auto:") ? t("subsAutoHint") : lang;
+      chip.onclick = () => {
+        if (picked.subs.has(lang)) { picked.subs.delete(lang); chip.classList.remove("active"); }
+        else { picked.subs.add(lang); chip.classList.add("active"); }
+        const langs = [...picked.subs].map(l => l.replace("auto:", ""));
+        setOption("--sub-langs", langs.length ? langs.join(",") : undefined);
+        setOption("--write-subs", langs.length ? true : undefined);
+      };
+      row.appendChild(chip);
+    });
+    extras.appendChild(row);
+  }
+
+  box.append(head, meta, hint, table, extras);
 }
 
 // ---------- 下载任务 ----------

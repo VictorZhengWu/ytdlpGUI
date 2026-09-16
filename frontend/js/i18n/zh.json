@@ -98,5 +98,13 @@
   "openFolder": "所在文件夹",
   "histDelete": "删除",
   "histDeleteConfirm": "删除这条历史记录？",
-  "thumbAlt": "缩略图"
+  "thumbAlt": "缩略图",
+  "paste": "📋 粘贴",
+  "pasteNotUrl": "剪贴板内容不是链接",
+  "pasteFail": "无法读取剪贴板（浏览器需授权）",
+  "updateAvailable": "新版本 {v} 可用（当前 {c}）",
+  "updateGo": "前往下载",
+  "audioTrackLabel": "音轨",
+  "subsLabel": "字幕",
+  "subsAutoHint": "自动生成字幕（语音识别）"
 }

@@ -98,5 +98,13 @@
   "openFolder": "保存先フォルダ",
   "histDelete": "削除",
   "histDeleteConfirm": "この履歴を削除しますか？",
-  "thumbAlt": "サムネイル"
+  "thumbAlt": "サムネイル",
+  "paste": "📋 貼り付け",
+  "pasteNotUrl": "クリップボードの内容が URL ではありません",
+  "pasteFail": "クリップボードを読み取れません（許可が必要）",
+  "updateAvailable": "新バージョン {v} が利用可能（現在 {c}）",
+  "updateGo": "ダウンロードへ",
+  "audioTrackLabel": "音声",
+  "subsLabel": "字幕",
+  "subsAutoHint": "自動生成字幕（音声認識）"
 }

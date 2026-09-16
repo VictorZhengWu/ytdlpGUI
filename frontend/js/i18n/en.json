@@ -98,5 +98,13 @@
   "openFolder": "In folder",
   "histDelete": "Delete",
   "histDeleteConfirm": "Delete this history entry?",
-  "thumbAlt": "thumbnail"
+  "thumbAlt": "thumbnail",
+  "paste": "📋 Paste",
+  "pasteNotUrl": "Clipboard content is not a URL",
+  "pasteFail": "Cannot read clipboard (permission needed)",
+  "updateAvailable": "Version {v} available (current {c})",
+  "updateGo": "Get it",
+  "audioTrackLabel": "Audio",
+  "subsLabel": "Subs",
+  "subsAutoHint": "Auto-generated subtitles"
 }

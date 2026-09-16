@@ -98,5 +98,13 @@
   "openFolder": "폴더에서 보기",
   "histDelete": "삭제",
   "histDeleteConfirm": "이 기록을 삭제할까요?",
-  "thumbAlt": "섬네일"
+  "thumbAlt": "섬네일",
+  "paste": "📋 붙여넣기",
+  "pasteNotUrl": "클립보드 내용이 URL이 아닙니다",
+  "pasteFail": "클립보드를 읽을 수 없습니다(권한 필요)",
+  "updateAvailable": "새 버전 {v} 사용 가능(현재 {c})",
+  "updateGo": "다운로드",
+  "audioTrackLabel": "음성",
+  "subsLabel": "자막",
+  "subsAutoHint": "자동 생성 자막(음성 인식)"
 }

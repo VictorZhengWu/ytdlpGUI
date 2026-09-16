@@ -166,3 +166,11 @@
 
 | T72a | QA 双角色轮（Agent 出题 27 用例 + 主会话浏览器执行）：实锤三缺陷并修复——①ConfigIn 缺 filename_template 字段致模板功能整体失效（补字段+清废弃 history_path）；②默认 --cookies-from-browser edge 在浏览器运行时 cookie 库被锁致默认下载必败（自动档改 opt-in，默认「不使用」）；③暂停后取消 UI 假死（refreshJobs 轮询同步旧卡 + 取消乐观更新）；另修 dyn 选择持久化（语言切换不重置）、缩略图失败回退 ▶。全部复测通过：默认下载→暂停→取消→重试续传→完成、无 .part/.fNNN 残留、偏好跨语言保持 | ✅ |
 | T72b | QA 终验尾巴清零：UT-14（打开文件/所在文件夹真实点击，资源管理器定位选中成功、默认应用打开无错误）与 UT-15（单条删除→条目消失→空提示）补跑通过；两条 P2 修复——文件名模板空串 PUT 改为重置默认（原 400）、cfgtext 失败回显改取实时 config（原闭包快照）。QA 终判：通过 | ✅ |
+
+## v3.7 收尾 V5/V7/V8（第十六轮）
+
+| # | 任务 | 状态 |
+|---|---|---|
+| T76 | 查询浮窗音轨/字幕选择：/api/formats 增 audio_tracks（按 language 去重取最优纯音轨，>1 语言才返回）与 subtitle_langs（人工在前、自动字幕 auto: 前缀、常见语言优先截断 20）；浮窗 chips——音轨点击构造「视频+bestaudio[language=xx]/bestaudio/best」，字幕切换勾选写 --sub-langs/--write-subs。实测：zh-Hans 点选→预览联动→取消清除 | ✅ |
+| T78 | 剪贴板粘贴按钮（navigator.clipboard，URL 行为追加不覆盖）；GET /api/update 更新检查（https + api.github.com host 白名单 + 公网 IP 校验，SSRF 约束同 imageproxy）；boot 静默检查，有新版显示可关闭横幅（前端 window.open 跳转 Releases，不经服务端） | ✅ |
+| T79 | 应用图标：scripts/make_icon.py 纯 Python（zlib+struct 写 PNG，无新依赖）生成渐变圆角方块+白色播放三角 assets/icon.ico（256/48/32/16 四尺寸）；spec icon 接入重建 exe | ✅ |

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ytdlpGUI · Video Downloader</title>
-<link rel="stylesheet" href="css/style.css?v=48">
+<link rel="stylesheet" href="css/style.css?v=49">
 </head>
 <body class="simple">
 <div class="bg-glow bg-glow-1"></div>
@@ -33,6 +33,12 @@
   <button id="ffmpegWarnClose" class="ffmpeg-warn-close" aria-label="×">×</button>
 </div>
 
+<div id="updateBanner" class="update-banner hidden">
+  <span class="update-banner-text"></span>
+  <a class="update-banner-link" href="https://github.com/VictorZhengWu/ytdlpGUI/releases/latest" target="_blank" rel="noopener" data-i18n="updateGo"></a>
+  <button id="updateBannerClose" class="ffmpeg-warn-close" aria-label="×">×</button>
+</div>
+
 <main>
   <!-- 左列：URL + 信息 + 任务（精简/高级模式共用） -->
   <section class="col-left">
@@ -40,6 +46,7 @@
       <label class="field-label" for="urlInput" data-i18n="urlLabel">视频链接（每行一个）</label>
       <textarea id="urlInput" rows="3" placeholder="https://www.youtube.com/watch?v=...&#10;https://www.bilibili.com/video/BV..."></textarea>
       <div class="btnrow">
+        <button id="btnPaste" class="btn ghost" data-i18n="paste">📋 粘贴</button>
         <button id="btnInfo" class="btn ghost" data-i18n="fetchInfo">查询信息</button>
         <button id="btnDownload" class="btn primary glow" data-i18n="download">⚡ 下 载</button>
       </div>
@@ -117,9 +124,9 @@
   </menu>
 </dialog>
 
-<script>window.APP_VER = "43";</script>
+<script>window.APP_VER = "45";</script>
 <script src="js/i18n.js?v=46"></script>
 <script src="js/quick.js?v=48"></script>
-<script src="js/app.js?v=58"></script>
+<script src="js/app.js?v=60"></script>
 </body>
 </html>

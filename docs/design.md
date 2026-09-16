@@ -97,6 +97,8 @@ ytdlpGUI/
 | POST | `/api/jobs` | body 增可选 `meta: {url: {title, thumbnail}}`（前端查询信息缓存，供历史卡片用，后端不发起网络请求） |
 | POST | `/api/jobs/{id}/pause` `resume` | 暂停=终止子进程保留 .part；继续/重试=同 argv 重新入队（yt-dlp 默认断点续传） |
 | GET | `/api/proxy/image?url=` | 缩略图代理（同源 Referer 过防盗链；SSRF 硬约束见 services/imageproxy.py 模块注释） |
+| GET | `/api/update` | 更新检查（https + api.github.com 白名单 + 公网 IP 校验；返回 {current,latest,has_update,url}） |
+| GET | `/api/formats?url=` | v3.7 起增 audio_tracks（>1 语言）与 subtitle_langs（常见语言优先） |
 | POST | `/api/history/open` | `{filepath, reveal}` 打开文件/定位文件夹；filepath 必须已登记在历史条目中 |
 | DELETE | `/api/history/{id}` | 单条删除（条目新增 id/title/thumbnail 字段） |
 
