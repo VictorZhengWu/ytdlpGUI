@@ -135,24 +135,61 @@ def _install_worker():
             _state.update(installing=False, progress=1.0)
 
 
+def _assert_safe_download_url(url: str):
+    """下载源安全约束（SSRF 防护）：仅 https、host 固定白名单、DNS 解析结果
+    必须为公网地址（拒绝环回/私有/链路本地/保留，防 rebinding）。"""
+    import ipaddress
+    import socket
+    from urllib.parse import urlparse
+    u = urlparse(url)
+    if u.scheme != "https" or u.hostname not in ("www.gyan.dev", "gyan.dev"):
+        raise RuntimeError(f"blocked download source: {url!r}")
+    ips = {ai[4][0] for ai in socket.getaddrinfo(u.hostname, 443, proto=socket.IPPROTO_TCP)}
+    for ip in ips:
+        if not ipaddress.ip_address(ip.split("%")[0]).is_global:
+            raise RuntimeError(f"blocked non-public download host: {u.hostname} -> {ip}")
+
+
+class _ValidatingRedirect(urllib.request.HTTPRedirectHandler):
+    """重定向逐跳复验，防止白名单域 302 跳向内网/任意目标。"""
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        _assert_safe_download_url(newurl)
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+def _safe_member(want: str, names: list) -> str:
+    """在压缩包内定位目标文件，拒绝含路径穿越的成员名（防御恶意/损坏的包）。"""
+    for n in names:
+        norm = n.replace("\\", "/").lstrip("/")
+        if ".." in norm.split("/"):
+            continue
+        if norm.endswith("/" + want):
+            return n
+    raise RuntimeError(f"{want} not found in archive")
+
+
 def _download_and_extract():
     BIN_DIR.mkdir(parents=True, exist_ok=True)
-    tmp_zip = BIN_DIR / "ffmpeg_dl.zip"
+    bin_root = BIN_DIR.resolve()
+    tmp_zip = (BIN_DIR / "ffmpeg_dl.zip").resolve()
+    if not tmp_zip.is_relative_to(bin_root):  # 禁 ../ 穿越
+        raise RuntimeError(f"unsafe temp path: {tmp_zip}")
 
     with _state_lock:
         _state["phase"] = "download"
+    _assert_safe_download_url(DOWNLOAD_URL)
     req = urllib.request.Request(DOWNLOAD_URL, headers={"User-Agent": "ytdlpGUI"})
-    with urllib.request.urlopen(req, timeout=60) as resp, open(tmp_zip, "wb") as f:
+    buf = bytearray()
+    with urllib.request.build_opener(_ValidatingRedirect).open(req, timeout=60) as resp:
         total = int(resp.headers.get("Content-Length") or 0)
-        got = 0
         while True:
             chunk = resp.read(64 * 1024)
             if not chunk:
                 break
-            f.write(chunk)
-            got += len(chunk)
+            buf += chunk
             with _state_lock:
-                _state["progress"] = round(got / total, 3) if total else 0.0
+                _state["progress"] = round(len(buf) / total, 3) if total else 0.0
+    tmp_zip.write_bytes(buf)  # 目标已 resolve+目录包含校验（见上），禁 ../ 穿越
 
     try:
         # 静态包根目录形如 ffmpeg-x.y-essentials_build/bin/*.exe；按文件名定位
@@ -161,10 +198,10 @@ def _download_and_extract():
         with zipfile.ZipFile(tmp_zip) as z:
             names = z.namelist()
             for want in ("ffmpeg.exe", "ffprobe.exe"):
-                hit = next((n for n in names if n.replace("\\", "/").endswith("/" + want)), None)
-                if not hit:
-                    raise RuntimeError(f"{want} not found in archive")
-                with z.open(hit) as src, open(BIN_DIR / want, "wb") as dst:
-                    shutil.copyfileobj(src, dst)
+                hit = _safe_member(want, names)  # 拒绝含 .. 的成员名
+                dst_path = (BIN_DIR / want).resolve()
+                if not dst_path.is_relative_to(bin_root):  # 禁 ../ 穿越
+                    raise RuntimeError(f"unsafe extract target: {dst_path}")
+                dst_path.write_bytes(z.read(hit))
     finally:
         tmp_zip.unlink(missing_ok=True)

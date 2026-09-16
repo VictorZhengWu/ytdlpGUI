@@ -8,7 +8,6 @@ const QUICK_GROUPS = [
     title: { zh: "保存位置", en: "Save Location", ja: "保存先", ko: "저장 위치" },
     items: [
       { flag: "__downloaddir", label: { zh: "下载目录", en: "Download directory", ja: "保存先ディレクトリ", ko: "다운로드 폴더" }, widget: "dir" },
-      { flag: "__historypath", label: { zh: "历史日志路径", en: "History log path", ja: "履歴ログのパス", ko: "기록 로그 경로" }, widget: "dir", configKey: "history_path" },
     ],
   },
   {

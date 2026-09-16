@@ -26,18 +26,34 @@ def _read(path: Path, default):
 # ---- 应用配置 ----
 
 CONFIG_PATH = DATA_DIR / "config.json"
-DEFAULT_CONFIG = {"download_dir": "downloads", "language": "en", "history_path": ""}
+# history_path 已移除（v3.5 安全加固：历史固定写数据目录，见 services/history.py）
+DEFAULT_CONFIG = {"download_dir": "downloads", "language": "en"}
 
 def get_config() -> dict:
     cfg = DEFAULT_CONFIG.copy()
     cfg.update(_read(CONFIG_PATH, dict))
     return cfg
 
+def _user_path(v: str) -> str:
+    """用户配置的 download_dir 必须为绝对路径且不含 ..
+    ——该项会传导给 yt-dlp 作为输出目录，禁止相对/穿越路径。"""
+    p = Path(v)
+    if not p.is_absolute() or ".." in p.parts:
+        raise ValueError(f"illegal path: {v!r}")
+    return str(p)
+
+
 def save_config(cfg: dict) -> dict:
     cur = get_config()
-    cur.update({k: v for k, v in cfg.items() if k in DEFAULT_CONFIG})
-    with _lock, open(CONFIG_PATH, "w", encoding="utf-8") as f:
-        json.dump(cur, f, ensure_ascii=False, indent=2)
+    incoming = {k: v for k, v in cfg.items() if k in DEFAULT_CONFIG}
+    if incoming.get("download_dir"):
+        incoming["download_dir"] = _user_path(incoming["download_dir"])
+    cur.update(incoming)
+    cfg_path = CONFIG_PATH.resolve()
+    if not cfg_path.is_relative_to(DATA_DIR.resolve()):  # 禁 ../ 穿越
+        raise ValueError("config path escapes data dir")
+    with _lock:
+        cfg_path.write_text(json.dumps(cur, ensure_ascii=False, indent=2), encoding="utf-8")
     return cur
 
 
@@ -50,17 +66,23 @@ def get_presets() -> dict:
 
 def save_preset(name: str, options: dict) -> dict:
     name = name.strip()
-    if not name or "/" in name:
+    if not name or "/" in name or "\\" in name or ".." in name:
         raise ValueError("预设名称不合法")
     presets = get_presets()
     presets[name] = options
-    with _lock, open(PRESETS_PATH, "w", encoding="utf-8") as f:
-        json.dump(presets, f, ensure_ascii=False, indent=2)
+    presets_path = PRESETS_PATH.resolve()
+    if not presets_path.is_relative_to(DATA_DIR.resolve()):  # 禁 ../ 穿越
+        raise ValueError("presets path escapes data dir")
+    with _lock:
+        presets_path.write_text(json.dumps(presets, ensure_ascii=False, indent=2), encoding="utf-8")
     return presets
 
 def delete_preset(name: str) -> dict:
     presets = get_presets()
     presets.pop(name, None)
-    with _lock, open(PRESETS_PATH, "w", encoding="utf-8") as f:
-        json.dump(presets, f, ensure_ascii=False, indent=2)
+    presets_path = PRESETS_PATH.resolve()
+    if not presets_path.is_relative_to(DATA_DIR.resolve()):  # 禁 ../ 穿越
+        raise ValueError("presets path escapes data dir")
+    with _lock:
+        presets_path.write_text(json.dumps(presets, ensure_ascii=False, indent=2), encoding="utf-8")
     return presets

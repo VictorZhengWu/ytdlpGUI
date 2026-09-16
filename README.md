@@ -12,7 +12,7 @@ A cross-platform graphical front-end for yt-dlp (Web / Linux / Windows) covering
 - **Mutual-exclusion governance**: 51 tri-state groups (Default/On/Off) + 30 auto-clearing pairs, metadata shared by frontend and backend, enforced server-side
 - **Download management**: multi-URL job queue, live progress/speed/ETA/log (SSE), cancellation, real-time file-path reporting
 - **Info lookup**: floating window with title/duration/format table — click a row to pick `-f`; per-URL results with ↑↓ navigation
-- **Download history**: URL/title/path/time/status fully recorded, clearable, configurable log path
+- **Download history**: URL/title/path/time/status fully recorded, clearable (stored in the app data dir)
 - **Directory picker**: server-side folder browser supporting LAN shares / network mounts (Windows drives / UNC paths)
 - **Four UI languages**: 中文 / English / 日本語 / 한국어, fully soft-coded (`frontend/js/i18n/*.json`)
 - **Presets**: save/load/delete option combos, validated on save

@@ -56,7 +56,10 @@ class ConfigIn(BaseModel):
 @router.put("/config")
 def put_cfg(body: ConfigIn):
     before = store.get_config()
-    cfg = store.save_config(body.model_dump(exclude_none=True))
+    try:
+        cfg = store.save_config(body.model_dump(exclude_none=True))
+    except ValueError as e:  # 路径类字段非法（相对路径/含 ..）
+        raise HTTPException(400, str(e))
     # 仅下载目录变化才重建管理器（切换语言等不得清空内存中的任务列表）
     if body.download_dir is not None and body.download_dir != before.get("download_dir"):
         rebuild_manager()
