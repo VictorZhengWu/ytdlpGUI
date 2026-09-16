@@ -49,7 +49,8 @@
     "running": "下载中",
     "done": "完成",
     "error": "失败",
-    "canceled": "已取消"
+    "canceled": "已取消",
+    "paused": "已暂停"
   },
   "sections": {
     "General Options": "通用",
@@ -89,5 +90,13 @@
   "ffmpegInstall": "⚙ 自动安装",
   "ffmpegInstalling": "下载中 {p}%",
   "ffmpegExtracting": "解压中…",
-  "ffmpegFail": "ffmpeg 自动安装失败"
+  "ffmpegFail": "ffmpeg 自动安装失败",
+  "pauseJob": "⏸ 暂停",
+  "resumeJob": "▶ 继续",
+  "retryJob": "↻ 重试",
+  "openFile": "打开文件",
+  "openFolder": "所在文件夹",
+  "histDelete": "删除",
+  "histDeleteConfirm": "删除这条历史记录？",
+  "thumbAlt": "缩略图"
 }

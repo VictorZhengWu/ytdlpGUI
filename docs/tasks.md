@@ -150,3 +150,16 @@
 | T69 | 原生窗口模式：launcher 集成 pywebview（Windows Edge WebView2），双击 exe 得到独立桌面窗口（1280×820、最小 960×600、主屏居中、关窗即退出后端）；端口被占自动顺延（多开/与开发服务共存）；pywebview 不可用回退浏览器模式；run.sh/run.bat 保持浏览器模式不动（开发/LAN 入口），spec 增加 webview hiddenimports。验证：源码与 exe 双通道截图确认原生窗口（无浏览器地址栏）、端口顺延实测 | ✅ |
 
 | T71 | 安全加固（Mimosa 扫描驱动）：ffmpeg 下载源 https+host 白名单与解压穿越防护；store/history 所有写入点 resolve+目录包含校验；download_dir 强制绝对路径无 ..（非法 400）；launcher 空流类替代 devnull 打开；**移除可配置 history_path**（历史固定写数据目录——封死配置注入任意路径写入面，兼除 BUG-01 语义歧义温床；前端控件同步移除） | ✅ |
+
+## v3.6 吸收竞品优点（第十五轮，SDD：docs/comparison-videdown.md 计划落地）
+
+| # | 任务 | 状态 |
+|---|---|---|
+| T71 | JS 运行时自动配置：services/runtime.py 探测 node/deno（which+注册表 PATH+常见安装位，复用 ffmpeg.py 模式）；/api/config 下发 js_runtime；常用面板「YouTube 解析引擎」下拉（自动=注入 --js-runtimes node:路径 / 关闭），前端组装真实选项值保持命令预览一致性 | ✅ |
+| T72 | Cookie 智能档：runtime.py 探测已装浏览器（chrome/edge/firefox，exe 存在性）；/api/config 下发 browsers；常用面板「浏览器登录态」下拉（自动=第一个已装浏览器→ --cookies-from-browser <名>，可显式选浏览器或关闭），默认自动 | ✅ |
+| T73 | 暂停/继续/重试：Job 增 paused 状态；pause=终止子进程保留 .part，resume=同 argv 重新入队（yt-dlp 默认续传），retry=终态任务重提；POST /api/jobs/{id}/pause|resume；任务卡三按钮 + SSE 状态联动 | ✅ |
+| T74 | 历史卡片化：条目增 id/title/thumbnail（title/缩略图来自前端查询信息缓存，随 POST /api/jobs meta 提交，后端不重复请求网络）；UI 卡片化（缩略图/标题/打开文件/打开文件夹/单条删除/清空）；打开操作校验 path 必须存在于历史条目（防任意启动）；缩略图经 /api/proxy/image 代理（SSRF 约束：仅 http/https、host 域名解析后必须公网地址、Content-Type 必须 image/*、5MB 上限） | ✅ |
+| T75 | 文件名模板：config 增 filename_template（默认 %(title)s [%(id)s].%(ext)s），常用面板可编辑；服务端校验禁 /\.. 及绝对路径成分 | ✅ |
+| T77 | 合并后清理：任务成功且有合并终产物时，删除同词干 .fNNN.* 中间流残留（yt-dlp 自删的兜底）；取消/暂停保留 .part（续传依赖） | ✅ |
+
+界面/功能分离纪律（本轮起明确为规约）：新增 UI 全部经 i18n 键（四语）+ CSS 变量类名渲染，DOM 生成只集中在 render* 函数；逻辑（state 计算/API 调用）不触 DOM；为将来主题化换肤预留。

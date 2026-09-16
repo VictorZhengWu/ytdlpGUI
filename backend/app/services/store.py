@@ -27,7 +27,8 @@ def _read(path: Path, default):
 
 CONFIG_PATH = DATA_DIR / "config.json"
 # history_path 已移除（v3.5 安全加固：历史固定写数据目录，见 services/history.py）
-DEFAULT_CONFIG = {"download_dir": "downloads", "language": "en"}
+DEFAULT_CONFIG = {"download_dir": "downloads", "language": "en",
+                  "filename_template": "%(title)s [%(id)s].%(ext)s"}
 
 def get_config() -> dict:
     cfg = DEFAULT_CONFIG.copy()
@@ -42,12 +43,22 @@ def _user_path(v: str) -> str:
         raise ValueError(f"illegal path: {v!r}")
     return str(p)
 
+def _filename_template(v: str) -> str:
+    """输出文件名模板：只允许文件名成分（yt-dlp %(field)s 语法），
+    禁分隔符/../盘符——防止模板把产物写到输出目录之外。"""
+    v = (v or "").strip()
+    if not v or "/" in v or "\\" in v or ".." in v or ":" in v:
+        raise ValueError("illegal filename template")
+    return v
+
 
 def save_config(cfg: dict) -> dict:
     cur = get_config()
     incoming = {k: v for k, v in cfg.items() if k in DEFAULT_CONFIG}
     if incoming.get("download_dir"):
         incoming["download_dir"] = _user_path(incoming["download_dir"])
+    if "filename_template" in incoming:
+        incoming["filename_template"] = _filename_template(incoming["filename_template"])
     cur.update(incoming)
     cfg_path = CONFIG_PATH.resolve()
     if not cfg_path.is_relative_to(DATA_DIR.resolve()):  # 禁 ../ 穿越

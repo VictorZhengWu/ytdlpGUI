@@ -13,6 +13,10 @@ import time
 import uuid
 from collections import deque
 from dataclasses import dataclass, field
+from pathlib import Path
+
+DEFAULT_OUTPUT_TEMPLATE = "%(title)s [%(id)s].%(ext)s"
+STREAM_FILE_RE = re.compile(r"\.f\d+(\.[A-Za-z0-9]+)$")  # 合并前中间流（.f137.mp4 等）
 
 PROGRESS_RE = re.compile(
     r"\[download\]\s+([\d.]+)%\s+of\s+(?:~?\S+).*?"
@@ -30,7 +34,8 @@ class Job:
     id: str
     urls: list
     argv: list                       # 不含 yt-dlp 可执行名、不含 URL
-    status: str = "queued"           # queued|running|done|error|canceled
+    status: str = "queued"           # queued|running|paused|done|error|canceled
+    meta: dict = field(default_factory=dict)  # 前端查询信息缓存 {url: {title, thumbnail}}，供历史记录用
     command_str: str = ""            # 真实执行的完整命令展示（含 -o 与 URL）
     progress: float = 0.0
     speed: str = ""
@@ -54,7 +59,7 @@ class Job:
             "id": self.id, "urls": self.urls, "argv": self.argv,
             "status": self.status, "progress": self.progress,
             "speed": self.speed, "eta": self.eta, "filepath": self.filepath,
-            "files": list(self.files), "file_urls": list(self.file_urls),
+            "files": list(self.files), "file_urls": list(self.file_urls), "meta": self.meta,
             "error": self.error, "created_at": self.created_at,
             "command": self.command_str or ("yt-dlp " + " ".join(self.argv + self.urls)),
         }.items()}
@@ -84,13 +89,55 @@ class DownloadManager:
 
     # ---- 对外接口 ----
 
-    def submit(self, urls: list, argv: list) -> Job:
-        job = Job(id=uuid.uuid4().hex[:12], urls=urls, argv=argv)
+    def submit(self, urls: list, argv: list, meta: dict | None = None) -> Job:
+        job = Job(id=uuid.uuid4().hex[:12], urls=urls, argv=argv, meta=meta or {})
         with self._lock:
             self.jobs[job.id] = job
             self._order.append(job.id)
         self._wakeup.set()
         return job
+
+    def pause(self, job_id: str) -> bool:
+        """暂停：终止子进程但保留 .part 断点，任务可 resume 续传。"""
+        job = self.jobs.get(job_id)
+        if not job:
+            return False
+        if job.status == "running" and job.process:
+            job.status = "paused"  # 先置状态：_run 退出分支据此跳过 error/历史记录
+            try:
+                job.process.terminate()
+            except OSError:
+                pass
+            return True
+        if job.status == "queued":
+            job.status = "paused"
+            job.push("status", job.status)
+            return True
+        return False
+
+    def _requeue(self, job: Job) -> None:
+        job.status, job.error = "queued", ""
+        with self._lock:
+            self._order.append(job.id)
+        self._wakeup.set()
+        job.push("status", job.status)
+
+    def resume(self, job_id: str) -> bool:
+        """继续已暂停任务：同 argv 重新入队，yt-dlp 默认续传 .part。"""
+        job = self.jobs.get(job_id)
+        if not job or job.status != "paused":
+            return False
+        self._requeue(job)
+        return True
+
+    def retry(self, job_id: str) -> bool:
+        """重试失败/已取消任务：同 argv 重新入队。"""
+        job = self.jobs.get(job_id)
+        if not job or job.status not in ("error", "canceled"):
+            return False
+        job.progress = 0.0
+        self._requeue(job)
+        return True
 
     def cancel(self, job_id: str) -> bool:
         job = self.jobs.get(job_id)
@@ -102,8 +149,9 @@ class DownloadManager:
                 job.process.terminate()
             except OSError:
                 pass
-        elif job.status == "queued":
+        elif job.status in ("queued", "paused"):
             job.status = "canceled"
+            job.push("status", job.status)
         return True
 
     def prune(self, max_age: float = 3600 * 24):
@@ -129,7 +177,7 @@ class DownloadManager:
                         break
                     job_id = self._order.popleft()
                 job = self.jobs.get(job_id)
-                if not job or job.status == "canceled":
+                if not job or job.status in ("canceled", "paused"):
                     continue
                 try:
                     self._run(job)
@@ -142,7 +190,9 @@ class DownloadManager:
     def _run(self, job: Job):
         from . import history  # 延迟导入避免环
         from .ffmpeg import env_with_ffmpeg
-        cmd = self.yt_dlp_cmd + ["-o", os.path.join(self.out_dir, "%(title)s [%(id)s].%(ext)s")] + job.argv + job.urls
+        from .store import get_config
+        tpl = get_config().get("filename_template") or DEFAULT_OUTPUT_TEMPLATE
+        cmd = self.yt_dlp_cmd + ["-o", os.path.join(self.out_dir, tpl)] + job.argv + job.urls
         job.command_str = "yt-dlp " + " ".join(cmd[len(self.yt_dlp_cmd):])
         job.status = "running"
         job.push("status", job.status)
@@ -166,16 +216,37 @@ class DownloadManager:
         code = proc.wait()
         job.process = None
         job.ended_at = time.time()
-        if job.status == "canceled":
+        if job.status in ("canceled", "paused"):
             job.push("status", job.status)
         elif code == 0:
             job.status, job.progress = "done", 100.0
+            self._cleanup_stream_leftovers(job)
             job.push("status", job.status)
         else:
             job.status = "error"
             job.error = next((l for l in reversed(job.lines) if l.lower().startswith("error") or "ERROR:" in l), f"exit code {code}")
             job.push("status", job.status)
-        history.record(job.to_dict())
+        if job.status in ("done", "error", "canceled"):
+            history.record(job.to_dict())
+
+    def _cleanup_stream_leftovers(self, job: Job):
+        """合并成功后的兜底清理：删除同词干的 .fNNN.* 中间流残留
+        （yt-dlp 通常自删；未删尽时避免用户看到成对的无声/无画文件）。"""
+        root = Path(self.out_dir).resolve()
+        for f in list(job.files):
+            m = STREAM_FILE_RE.search(f)
+            if not m:
+                continue
+            final = f[:m.start()] + m.group(1)
+            try:
+                fp = Path(f)
+                if fp.is_file() and Path(final).is_file():
+                    rp = fp.resolve()
+                    if rp.is_relative_to(root):  # 禁 ../ 穿越
+                        rp.unlink()
+                        job.files.remove(f)
+            except OSError:
+                pass
 
     @staticmethod
     def _parse_line(job: Job, line: str):

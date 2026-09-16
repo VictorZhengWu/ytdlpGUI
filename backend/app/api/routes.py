@@ -6,10 +6,10 @@ import os
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException
-from fastapi.responses import StreamingResponse
+from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel
 
-from ..services import ffmpeg as ffsvc, history, metadata, options as optsvc, store
+from ..services import ffmpeg as ffsvc, history, imageproxy, metadata, options as optsvc, runtime, store
 from ..services.downloader import DownloadManager
 
 router = APIRouter(prefix="/api")
@@ -44,7 +44,8 @@ def get_options():
 
 @router.get("/config")
 def get_cfg():
-    return dict(store.get_config(), ffmpeg=ffsvc.detect())
+    return dict(store.get_config(), ffmpeg=ffsvc.detect(),
+                js_runtime=runtime.js_runtime(), browsers=runtime.browsers())
 
 
 class ConfigIn(BaseModel):
@@ -151,11 +152,47 @@ def clear_history():
     return {"ok": True}
 
 
+@router.delete("/history/{entry_id}")
+def delete_history_entry(entry_id: str):
+    if not history.delete_entry(entry_id):
+        raise HTTPException(500, "删除失败")
+    return {"ok": True}
+
+
+class HistoryOpenIn(BaseModel):
+    filepath: str
+    reveal: bool = False
+
+
+@router.post("/history/open")
+def open_history_file(body: HistoryOpenIn):
+    try:
+        history.open_path(body.filepath, body.reveal)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    return {"ok": True}
+
+
+# ---- 缩略图代理（防盗链 + SSRF 约束见 services/imageproxy.py） ----
+
+@router.get("/proxy/image")
+def proxy_image(url: str):
+    try:
+        data, ctype = imageproxy.fetch_image(url)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    except OSError:
+        raise HTTPException(502, "图片获取失败")
+    return Response(content=data, media_type=ctype,
+                    headers={"Cache-Control": "private, max-age=86400"})
+
+
 # ---- 下载任务 ----
 
 class JobIn(BaseModel):
     urls: list[str]
     options: dict = {}
+    meta: dict = {}  # 前端查询信息缓存 {url: {title, thumbnail}}，供历史卡片（后端不发起网络请求）
 
 
 @router.post("/jobs")
@@ -165,7 +202,7 @@ def create_job(body: JobIn):
         argv = optsvc.build_args(body.options)
     except optsvc.OptionsError as e:
         raise HTTPException(400, str(e))
-    job = get_manager().submit(urls, argv)
+    job = get_manager().submit(urls, argv, meta=body.meta)
     return job.to_dict()
 
 
@@ -178,6 +215,22 @@ def list_jobs():
 def cancel_job(job_id: str):
     if not get_manager().cancel(job_id):
         raise HTTPException(404, "任务不存在")
+    return {"ok": True}
+
+
+@router.post("/jobs/{job_id}/pause")
+def pause_job(job_id: str):
+    if not get_manager().pause(job_id):
+        raise HTTPException(409, "任务当前状态不可暂停")
+    return {"ok": True}
+
+
+@router.post("/jobs/{job_id}/resume")
+def resume_job(job_id: str):
+    """继续（paused）或重试（error/canceled）：同 argv 重新入队，断点续传。"""
+    mgr = get_manager()
+    if not (mgr.resume(job_id) or mgr.retry(job_id)):
+        raise HTTPException(409, "任务当前状态不可继续")
     return {"ok": True}
 
 
@@ -202,7 +255,7 @@ async def job_events(job_id: str):
                 yield ": keepalive\n\n"
                 continue
             yield f"data: {json.dumps((kind, payload), ensure_ascii=False)}\n\n"
-            if kind == "status" and payload in ("done", "error", "canceled"):
+            if kind == "status" and payload in ("done", "error", "canceled", "paused"):
                 break
 
     return StreamingResponse(gen(), media_type="text/event-stream")

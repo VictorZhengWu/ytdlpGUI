@@ -6,6 +6,7 @@ const state = {
   registry: null, flagMap: new Map(), activeSection: null,
   options: {},           // 用户当前选项 {flag: value}（常用/高级共用）
   jobs: new Map(), lang: "zh",
+  infoCache: new Map(),  // url → {title, thumbnail}：查询信息结果，随下载提交供历史卡片用
   panel: "queue",        // 左下面板当前页：queue | history
   groupFlagTo: new Map(),  // flag → 互斥组（元数据来自后端 conflicts.groups）
   mixed: new Map(),        // flag → Set<对端>（元数据来自后端 conflicts.mixed）
@@ -176,6 +177,21 @@ function makeQuickControl(item, cfg) {
     return div;
   }
 
+  // 配置持久化文本（如文件名模板）：改动即 PUT config
+  if (item.widget === "cfgtext") {
+    const key = item.configKey;
+    const lab = document.createElement("label");
+    lab.textContent = label;
+    const input = document.createElement("input");
+    input.type = "text"; input.dataset.cfgkey = key;
+    input.placeholder = (item.ph && quickText(item.ph)) || "";
+    input.value = cfg?.[key] ?? "";
+    input.onchange = () => api("/api/config", { method: "PUT", body: { [key]: input.value.trim() } })
+      .catch(e => { showErr(e); input.value = cfg?.[key] ?? ""; });
+    div.append(lab, input);
+    return div;
+  }
+
   if (item.widget === "check") {
     const lab = document.createElement("label");
     const cb = document.createElement("input");
@@ -194,15 +210,57 @@ function makeQuickControl(item, cfg) {
     const sel = document.createElement("select");
     sel.className = "glass-select";
     sel.style.width = "100%";
-    item.choices.forEach(c => {
-      const o = document.createElement("option");
-      o.value = c.v;
-      o.textContent = typeof c.l === "string" ? c.l : quickText(c.l);
-      sel.appendChild(o);
-    });
-    sel.value = item.def ?? "";
+
+    // 动态选项（依赖 boot 时 /api/config 的探测结果）
+    let dynApply = null;  // (value) => void：把语义值翻译成真实选项
+    if (item.dyn === "js") {
+      const jr = cfg?.js_runtime || {};
+      if (jr.available) {
+        const o = document.createElement("option");
+        o.value = "auto";
+        o.textContent = quickText({ zh: `自动（${jr.name}）`, en: `Auto (${jr.name})`, ja: `自動（${jr.name}）`, ko: `자동 (${jr.name})` });
+        sel.appendChild(o);
+      }
+      const off = document.createElement("option");
+      off.value = "off";
+      off.textContent = quickText({ zh: "关闭", en: "Off", ja: "オフ", ko: "끄기" });
+      sel.appendChild(off);
+      sel.value = jr.available ? "auto" : "off";
+      dynApply = v => setOption("--js-runtimes",
+        v === "auto" && jr.available ? `${jr.name}:${jr.path}` : undefined);
+    } else if (item.dyn === "cookie") {
+      const found = cfg?.browsers || [];
+      if (found.length) {
+        const o = document.createElement("option");
+        o.value = "auto";
+        o.textContent = quickText({ zh: `自动（${found[0]}）`, en: `Auto (${found[0]})`, ja: `自動（${found[0]}）`, ko: `자동 (${found[0]})` });
+        sel.appendChild(o);
+      }
+      const none = document.createElement("option");
+      none.value = "";
+      none.textContent = quickText({ zh: "不使用", en: "None", ja: "使用しない", ko: "사용 안 함" });
+      sel.appendChild(none);
+      item.choices.forEach(c => {
+        const o = document.createElement("option");
+        o.value = c.v; o.textContent = typeof c.l === "string" ? c.l : quickText(c.l);
+        sel.appendChild(o);
+      });
+      sel.value = found.length ? "auto" : "";
+      dynApply = v => setOption("--cookies-from-browser",
+        v === "auto" ? found[0] : (v || undefined));
+    } else {
+      item.choices.forEach(c => {
+        const o = document.createElement("option");
+        o.value = c.v;
+        o.textContent = typeof c.l === "string" ? c.l : quickText(c.l);
+        sel.appendChild(o);
+      });
+      sel.value = item.def ?? "";
+    }
+
     const flag = item.flag === "__quality" ? "--format-sort" : item.flag;
     sel.onchange = () => {
+      if (dynApply) { dynApply(sel.value); return; }
       if (flag === "--format-sort") {
         setOption("-f", undefined);
         const fmtSel = document.querySelector("#quickPanel select[data-flag='--merge-output-format']");
@@ -214,6 +272,7 @@ function makeQuickControl(item, cfg) {
         setOption(flag, sel.value);
       }
     };
+    if (dynApply) dynApply(sel.value);  // 构建即同步默认值进 state.options
     sel.dataset.flag = flag;
     div.appendChild(sel);
   } else {
@@ -515,6 +574,8 @@ async function fetchInfo() {
       const info = await api("/api/formats?url=" + encodeURIComponent(url), { method: "GET" });
       holder.innerHTML = "";
       renderInfo(info, holder);
+      if (info.type === "video" && info.title)  // 缓存标题/缩略图，下载后供历史卡片
+        state.infoCache.set(url, { title: info.title, thumbnail: info.thumbnail || "" });
     } catch (e) { holder.textContent = t("fetchFail") + ": " + e.message; }
   }
 
@@ -571,8 +632,10 @@ async function startDownload() {
   if (!urls.length) return alert(t("emptyUrl"));
   // 精简模式：纯净下载，只使用 yt-dlp <url>，不附加任何选项
   const opts = document.body.classList.contains("simple") ? {} : state.options;
+  const meta = {};  // 查询信息缓存随任务提交（命中才有），供历史卡片显示标题/缩略图
+  urls.forEach(u => { if (state.infoCache.has(u)) meta[u] = state.infoCache.get(u); });
   try {
-    const job = await api("/api/jobs", { body: { urls, options: opts } });
+    const job = await api("/api/jobs", { body: { urls, options: opts, meta } });
     addJobCard(job);
     followJob(job.id);
     setPanel("queue");
@@ -603,16 +666,27 @@ function addJobCard(job) {
     <pre class="hidden"></pre>
     <div class="btnrow">
       <button class="btn ghost sm log-btn">${t("toggleLog")}</button>
+      <button class="btn ghost sm pause-btn hidden"></button>
+      <button class="btn ghost sm resume-btn hidden"></button>
+      <button class="btn ghost sm retry-btn hidden"></button>
       <button class="btn ghost sm danger cancel-btn">${t("cancelJob")}</button>
     </div>`;
   el.querySelector(".log-btn").onclick = () => el.querySelector("pre").classList.toggle("hidden");
   el.querySelector(".cancel-btn").onclick = () => api(`/api/jobs/${job.id}/cancel`, { body: {} }).catch(() => {});
+  el.querySelector(".pause-btn").onclick = () => api(`/api/jobs/${job.id}/pause`, { body: {} }).catch(showErr);
+  const resume = () => api(`/api/jobs/${job.id}/resume`, { body: {} })
+    .then(() => { const j = state.jobs.get(job.id); if (j) { j.done = false; followJob(job.id); } })
+    .catch(showErr);
+  el.querySelector(".resume-btn").onclick = resume;
+  el.querySelector(".retry-btn").onclick = resume;
   $("#jobList").prepend(el);
   state.jobs.set(job.id, {
     el,
     badge: el.querySelector(".badge"), bar: el.querySelector(".progressbar > div"),
     pct: el.querySelector(".pct"), spd: el.querySelector(".spd"), eta: el.querySelector(".eta"),
     fp: el.querySelector(".fp"), pre: el.querySelector("pre"), done: false,
+    pause: el.querySelector(".pause-btn"), resume: el.querySelector(".resume-btn"),
+    retry: el.querySelector(".retry-btn"), cancel: el.querySelector(".cancel-btn"),
   });
   updateJobCard(job.id, job);
 }
@@ -620,11 +694,26 @@ function addJobCard(job) {
 function updateJobCard(id, data) {
   const j = state.jobs.get(id);
   if (!j) return;
-  if (data.status) { j.badge.className = "badge " + data.status; j.badge.textContent = t("statusMap")[data.status] || data.status; }
+  if (data.status) {
+    j.badge.className = "badge " + data.status;
+    j.badge.textContent = t("statusMap")[data.status] || data.status;
+    syncJobButtons(j, data.status);
+  }
   if (typeof data.progress === "number") { j.bar.style.width = data.progress + "%"; j.pct.textContent = data.progress.toFixed(1) + "%"; }
   if (data.speed) j.spd.textContent = data.speed;
   if (data.eta) j.eta.textContent = "ETA " + data.eta;
   if (data.filepath) j.fp.textContent = data.filepath;
+}
+
+// 任务操作按钮随状态显隐（文案经 i18n，语言切换时由 retranslateJobCards 复调）
+function syncJobButtons(j, status) {
+  j.pause.classList.toggle("hidden", !["running", "queued"].includes(status));
+  j.resume.classList.toggle("hidden", status !== "paused");
+  j.retry.classList.toggle("hidden", !["error", "canceled"].includes(status));
+  j.cancel.classList.toggle("hidden", !["running", "queued", "paused"].includes(status));
+  j.pause.textContent = t("pauseJob");
+  j.resume.textContent = t("resumeJob");
+  j.retry.textContent = t("retryJob");
 }
 
 function followJob(id) {
@@ -638,7 +727,7 @@ function followJob(id) {
     else if (kind === "progress") updateJobCard(id, payload);
     else if (kind === "status") {
       updateJobCard(id, { status: payload });
-      if (["done", "error", "canceled"].includes(payload)) {
+      if (["done", "error", "canceled", "paused"].includes(payload)) {
         j.done = true; es.close();
         if (state.panel === "history") loadHistory();
       }
@@ -665,26 +754,60 @@ async function loadHistory() {
     const entries = await api("/api/history", { method: "GET" });
     box.innerHTML = "";
     if (!entries.length) { box.innerHTML = `<div class="empty-hint">${t("emptyHistory")}</div>`; return; }
-    const table = document.createElement("table");
-    table.className = "history-table";
-    entries.forEach(e => {
-      const tr = document.createElement("tr");
-      const badge = `<span class="badge ${e.status}">${t("statusMap")[e.status] || e.status}</span>`;
-      const titles = e.titles.length ? esc(e.titles.join(" / ")) : esc(e.urls.join(" "));
-      const err = e.error ? `<div class="h-err">${esc(e.error.slice(0, 120))}</div>` : "";
-      tr.innerHTML = `
-        <td class="h-time">${esc(e.time)}</td>
-        <td>
-          <div class="h-title">${titles}</div>
-          <div class="h-url">${esc(e.urls[0] || "")}${e.urls.length > 1 ? ` (+${e.urls.length - 1})` : ""}</div>
-          ${e.filepath ? `<div class="h-path">${esc(e.filepath)}</div>` : ""}
-          ${err}
-        </td>
-        <td>${badge}</td>`;
-      table.appendChild(tr);
-    });
-    box.appendChild(table);
+    entries.forEach(e => box.appendChild(makeHistoryCard(e)));
   } catch (e) { box.innerHTML = `<div class="empty-hint">${esc(e.message)}</div>`; }
+}
+
+// 历史卡片：缩略图（经后端代理过防盗链）+ 标题 + 打开文件/定位文件夹/单条删除
+function makeHistoryCard(e) {
+  const card = document.createElement("div");
+  card.className = "hist-card";
+
+  const thumb = document.createElement("div");
+  thumb.className = "hist-thumb";
+  if (e.thumbnail) {
+    const img = document.createElement("img");
+    img.loading = "lazy"; img.alt = t("thumbAlt");
+    img.src = "/api/proxy/image?url=" + encodeURIComponent(e.thumbnail);
+    img.onerror = () => img.remove();  // 代理失败退回首字母占位
+    thumb.appendChild(img);
+  } else {
+    thumb.textContent = "▶";
+  }
+
+  const main = document.createElement("div");
+  main.className = "hist-main";
+  const badge = `<span class="badge ${e.status}">${t("statusMap")[e.status] || e.status}</span>`;
+  const err = e.error ? `<div class="h-err">${esc(e.error.slice(0, 120))}</div>` : "";
+  main.innerHTML = `
+    <div class="h-title">${esc(e.title || (e.titles || []).join(" / ") || (e.urls || [""])[0])}</div>
+    <div class="h-meta">${esc(e.time)} · ${badge}${e.urls && e.urls.length > 1 ? ` <span class="h-more">+${e.urls.length - 1}</span>` : ""}</div>
+    ${e.filepath ? `<div class="h-path" title="${esc(e.filepath)}">${esc(e.filepath)}</div>` : ""}
+    ${err}`;
+
+  const actions = document.createElement("div");
+  actions.className = "hist-actions";
+  const mkBtn = (cls, label, fn) => {
+    const b = document.createElement("button");
+    b.className = "btn ghost sm " + cls;
+    b.textContent = label;
+    b.onclick = fn;
+    actions.appendChild(b);
+  };
+  if (e.filepath && e.status === "done") {
+    mkBtn("open-file-btn", "📂 " + t("openFile"), () =>
+      api("/api/history/open", { body: { filepath: e.filepath } }).catch(showErr));
+    mkBtn("open-folder-btn", "📁 " + t("openFolder"), () =>
+      api("/api/history/open", { body: { filepath: e.filepath, reveal: true } }).catch(showErr));
+  }
+  mkBtn("del-btn danger", "🗑 " + t("histDelete"), async () => {
+    if (!confirm(t("histDeleteConfirm"))) return;
+    await api(`/api/history/${encodeURIComponent(e.id)}`, { method: "DELETE" }).catch(showErr);
+    loadHistory();
+  });
+
+  card.append(thumb, main, actions);
+  return card;
 }
 
 // ---------- 预设 ----------
@@ -781,6 +904,7 @@ function bindEvents() {
     buildQuickPanel(await api("/api/config", { method: "GET" }));
     buildOptionTabs();
     retranslateJobCards();
+    loadHistory();  // 历史卡片文案随语言重建（badge/操作按钮是渲染期固化的）
     refreshJobs();
   };
 }
@@ -791,7 +915,8 @@ function retranslateJobCards() {
     const st = [...j.badge.classList].find(c => c !== "badge") || "";
     j.badge.textContent = t("statusMap")[st] || st;
     j.el.querySelector(".log-btn").textContent = t("toggleLog");
-    j.el.querySelector(".cancel-btn").textContent = t("cancelJob");
+    j.cancel.textContent = t("cancelJob");
+    syncJobButtons(j, st);
   });
 }
 

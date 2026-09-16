@@ -8,6 +8,8 @@ const QUICK_GROUPS = [
     title: { zh: "保存位置", en: "Save Location", ja: "保存先", ko: "저장 위치" },
     items: [
       { flag: "__downloaddir", label: { zh: "下载目录", en: "Download directory", ja: "保存先ディレクトリ", ko: "다운로드 폴더" }, widget: "dir" },
+      { flag: "__filenametpl", label: { zh: "文件名模板", en: "Filename template", ja: "ファイル名テンプレート", ko: "파일명 템플릿" }, widget: "cfgtext", configKey: "filename_template",
+        ph: { zh: "%(title)s [%(id)s].%(ext)s", en: "%(title)s [%(id)s].%(ext)s", ja: "%(title)s [%(id)s].%(ext)s", ko: "%(title)s [%(id)s].%(ext)s" } },
     ],
   },
   {
@@ -59,10 +61,11 @@ const QUICK_GROUPS = [
     items: [
       { flag: "--proxy", label: { zh: "代理服务器", en: "Proxy", ja: "プロキシ", ko: "프록시" }, widget: "text",
         ph: { zh: "如：socks5://127.0.0.1:1080", en: "e.g. socks5://127.0.0.1:1080", ja: "例: socks5://127.0.0.1:1080", ko: "예: socks5://127.0.0.1:1080" } },
-      { flag: "--cookies-from-browser", label: { zh: "从浏览器读取登录态（会员内容）", en: "Cookies from browser", ja: "ブラウザから Cookie を読み込む", ko: "브라우저에서 쿠키 읽기" },
-        widget: "select", def: "", choices: [
-          { v: "", l: { zh: "不使用", en: "None", ja: "使用しない", ko: "사용 안 함" } }, { v: "chrome", l: "Chrome" },
-          { v: "edge", l: "Edge" }, { v: "firefox", l: "Firefox" }, { v: "safari", l: "Safari" } ] },
+      { flag: "__jsruntime", label: { zh: "YouTube 解析引擎", en: "YouTube JS runtime", ja: "YouTube 解析エンジン", ko: "YouTube 파싱 엔진" },
+        widget: "select", dyn: "js" },
+      { flag: "__cookiebrowser", label: { zh: "浏览器登录态（会员内容）", en: "Browser cookies", ja: "ブラウザのログイン情報", ko: "브라우저 로그인 상태" },
+        widget: "select", dyn: "cookie", choices: [
+          { v: "chrome", l: "Chrome" }, { v: "edge", l: "Edge" }, { v: "firefox", l: "Firefox" }, { v: "safari", l: "Safari" } ] },
       { flag: "--limit-rate", label: { zh: "限速", en: "Speed limit", ja: "速度制限", ko: "속도 제한" }, widget: "text",
         ph: { zh: "如：4M（留空=不限）", en: "e.g. 4M", ja: "例: 4M", ko: "예: 4M" } },
       { flag: "--concurrent-fragments", label: { zh: "并发连接数（加速）", en: "Concurrency", ja: "並列接続数", ko: "동시 연결 수" }, widget: "select", def: "1",

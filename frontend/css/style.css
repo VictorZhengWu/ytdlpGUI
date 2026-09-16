@@ -357,3 +357,24 @@ dialog menu { display: flex; justify-content: flex-end; gap: 10px; padding: 0; m
 }
 .ffmpeg-warn-install:hover:not(:disabled) { background: rgba(251, 191, 36, .3); color: var(--text); }
 .ffmpeg-warn-install:disabled { opacity: .75; cursor: default; }
+
+/* 历史卡片（T74）：全部经变量着色，主题化时仅需覆盖变量 */
+.hist-card {
+  display: flex; gap: 12px; align-items: stretch;
+  padding: 10px 12px; margin-bottom: 8px;
+  background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+}
+.hist-thumb {
+  flex: none; width: 96px; height: 60px; border-radius: 8px; overflow: hidden;
+  background: var(--bg-2); color: var(--muted);
+  display: flex; align-items: center; justify-content: center; font-size: 20px;
+}
+.hist-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.hist-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.hist-main .h-title { font-weight: 600; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hist-main .h-meta { font-size: 11.5px; color: var(--muted); display: flex; gap: 6px; align-items: center; }
+.hist-main .h-more { color: var(--accent); }
+.hist-main .h-path { font-size: 11px; color: var(--muted); font-family: Consolas, monospace;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hist-actions { flex: none; display: flex; flex-direction: column; gap: 4px; justify-content: center; }
+.hist-actions .btn { padding: 3px 8px; font-size: 11.5px; }

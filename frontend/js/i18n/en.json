@@ -49,7 +49,8 @@
     "running": "Running",
     "done": "Done",
     "error": "Error",
-    "canceled": "Canceled"
+    "canceled": "Canceled",
+    "paused": "Paused"
   },
   "sections": {
     "General Options": "General",
@@ -89,5 +90,13 @@
   "ffmpegInstall": "⚙ Auto-install",
   "ffmpegInstalling": "Downloading {p}%",
   "ffmpegExtracting": "Extracting…",
-  "ffmpegFail": "ffmpeg auto-install failed"
+  "ffmpegFail": "ffmpeg auto-install failed",
+  "pauseJob": "⏸ Pause",
+  "resumeJob": "▶ Resume",
+  "retryJob": "↻ Retry",
+  "openFile": "Open file",
+  "openFolder": "In folder",
+  "histDelete": "Delete",
+  "histDeleteConfirm": "Delete this history entry?",
+  "thumbAlt": "thumbnail"
 }

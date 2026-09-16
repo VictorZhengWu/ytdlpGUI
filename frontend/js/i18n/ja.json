@@ -49,7 +49,8 @@
     "running": "ダウンロード中",
     "done": "完了",
     "error": "失敗",
-    "canceled": "キャンセル"
+    "canceled": "キャンセル",
+    "paused": "一時停止中"
   },
   "sections": {
     "General Options": "全般",
@@ -89,5 +90,13 @@
   "ffmpegInstall": "⚙ 自動インストール",
   "ffmpegInstalling": "ダウンロード中 {p}%",
   "ffmpegExtracting": "解凍中…",
-  "ffmpegFail": "ffmpeg の自動インストールに失敗しました"
+  "ffmpegFail": "ffmpeg の自動インストールに失敗しました",
+  "pauseJob": "⏸ 一時停止",
+  "resumeJob": "▶ 再開",
+  "retryJob": "↻ 再試行",
+  "openFile": "ファイルを開く",
+  "openFolder": "保存先フォルダ",
+  "histDelete": "削除",
+  "histDeleteConfirm": "この履歴を削除しますか？",
+  "thumbAlt": "サムネイル"
 }
