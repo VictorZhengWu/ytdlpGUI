@@ -51,7 +51,7 @@ def get_cfg():
 class ConfigIn(BaseModel):
     download_dir: str | None = None
     language: str | None = None
-    history_path: str | None = None
+    filename_template: str | None = None
 
 
 @router.put("/config")

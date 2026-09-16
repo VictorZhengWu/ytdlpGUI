@@ -132,6 +132,21 @@ function quickText(obj) {  // 多语言软编码取值：中文回退 zh，其�
   return obj[state.lang] || obj.en || obj.zh;
 }
 
+// 动态下拉（JS 运行时/浏览器 Cookie）的用户选择持久化：语言切换/清空会重建面板，不得重置偏好
+function dynSaved(flag, fallback) {
+  try {
+    const saved = JSON.parse(localStorage.getItem("ytdlpgui-dynsel") || "{}");
+    return saved[flag] ?? fallback;
+  } catch { return fallback; }
+}
+function dynRemember(flag, value) {
+  try {
+    const saved = JSON.parse(localStorage.getItem("ytdlpgui-dynsel") || "{}");
+    saved[flag] = value;
+    localStorage.setItem("ytdlpgui-dynsel", JSON.stringify(saved));
+  } catch { /* 隐私模式等存储不可用时静默降级为会话内默认 */ }
+}
+
 function buildQuickPanel(cfg) {
   const panel = $("#quickPanel");
   panel.innerHTML = "";
@@ -225,9 +240,9 @@ function makeQuickControl(item, cfg) {
       off.value = "off";
       off.textContent = quickText({ zh: "关闭", en: "Off", ja: "オフ", ko: "끄기" });
       sel.appendChild(off);
-      sel.value = jr.available ? "auto" : "off";
-      dynApply = v => setOption("--js-runtimes",
-        v === "auto" && jr.available ? `${jr.name}:${jr.path}` : undefined);
+      sel.value = dynSaved(item.flag, jr.available ? "auto" : "off");
+      dynApply = v => { dynRemember(item.flag, v); setOption("--js-runtimes",
+        v === "auto" && jr.available ? `${jr.name}:${jr.path}` : undefined); };
     } else if (item.dyn === "cookie") {
       const found = cfg?.browsers || [];
       if (found.length) {
@@ -245,9 +260,11 @@ function makeQuickControl(item, cfg) {
         o.value = c.v; o.textContent = typeof c.l === "string" ? c.l : quickText(c.l);
         sel.appendChild(o);
       });
-      sel.value = found.length ? "auto" : "";
-      dynApply = v => setOption("--cookies-from-browser",
-        v === "auto" ? found[0] : (v || undefined));
+      // 默认「不使用」：浏览器运行中 cookie 库被锁会使默认下载必败（实测 Edge），
+      // 自动档保留置顶供按需开启。用户选择跨重建持久（语言切换/清空不重置）。
+      sel.value = dynSaved(item.flag, "");
+      dynApply = v => { dynRemember(item.flag, v); setOption("--cookies-from-browser",
+        v === "auto" ? found[0] : (v || undefined)); };
     } else {
       item.choices.forEach(c => {
         const o = document.createElement("option");
@@ -647,6 +664,7 @@ async function refreshJobs() {
     const jobs = await api("/api/jobs", { method: "GET" });
     jobs.forEach(j => {
       if (!state.jobs.has(j.id)) { addJobCard(j); if (["queued", "running"].includes(j.status)) followJob(j.id); }
+      else updateJobCard(j.id, j);  // 轮询同步旧卡：SSE 关闭后（paused 终态等）界面不再假死
     });
     if (state.panel === "history") loadHistory();
   } catch {}
@@ -672,7 +690,10 @@ function addJobCard(job) {
       <button class="btn ghost sm danger cancel-btn">${t("cancelJob")}</button>
     </div>`;
   el.querySelector(".log-btn").onclick = () => el.querySelector("pre").classList.toggle("hidden");
-  el.querySelector(".cancel-btn").onclick = () => api(`/api/jobs/${job.id}/cancel`, { body: {} }).catch(() => {});
+  el.querySelector(".cancel-btn").onclick = () => {
+    updateJobCard(job.id, { status: "canceled" });  // 乐观更新（SSE 可能已随 paused 终态关闭）
+    api(`/api/jobs/${job.id}/cancel`, { body: {} }).catch(() => {});
+  };
   el.querySelector(".pause-btn").onclick = () => api(`/api/jobs/${job.id}/pause`, { body: {} }).catch(showErr);
   const resume = () => api(`/api/jobs/${job.id}/resume`, { body: {} })
     .then(() => { const j = state.jobs.get(job.id); if (j) { j.done = false; followJob(job.id); } })
@@ -769,7 +790,7 @@ function makeHistoryCard(e) {
     const img = document.createElement("img");
     img.loading = "lazy"; img.alt = t("thumbAlt");
     img.src = "/api/proxy/image?url=" + encodeURIComponent(e.thumbnail);
-    img.onerror = () => img.remove();  // 代理失败退回首字母占位
+    img.onerror = () => { img.remove(); thumb.textContent = "▶"; };  // 代理失败回退占位符
     thumb.appendChild(img);
   } else {
     thumb.textContent = "▶";
