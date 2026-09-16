@@ -26,3 +26,6 @@ Thumbs.db
 
 # 运行时生成的 cookie 罐（凭据风险，绝不入库）
 cookies.txt
+
+# Mimosa 扫描工件（本地缓存，不入库）
+.mimosa/
